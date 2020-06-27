@@ -1,0 +1,13 @@
+# directory containing the repo-server-list file
+mirrors_update_mirrors_dir: "/etc/pacman.d"
+
+# repo-server-list filename
+mirrors_update_mirrors_file: "mirrorlist"
+
+# filename for the backup copy of original repo-server-list
+mirrors_update_mirrors_bkup: "mirrorlist_bkup"
+
+# update the repo-server-list if it is older than this criteria
+# note: use format 1m (minutes), 1h (hours), 1d (days)
+mirrors_update_age: "1d"
+
