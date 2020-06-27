@@ -1,0 +1,13 @@
+galaxy_info:
+  author: digimokan
+  description: "Update list of linux distro's repo servers"
+  license: "MIT"
+  min_ansible_version: 2.5
+  platforms:
+    - name: Archlinux
+      versions:
+        - all
+  galaxy_tags:
+    - archlinux
+    - mirrorlist
+
