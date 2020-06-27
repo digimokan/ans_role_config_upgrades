@@ -1,0 +1,4 @@
+- name: "Check age of 'mirrorlist' file, for Arch Linux"
+  include_tasks: chk_age_archlinux.yml
+  when: ansible_os_family == "Archlinux"
+

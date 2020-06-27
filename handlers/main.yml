@@ -1,0 +1,7 @@
+- name: "Update Arch Linux mirrorlist"
+  include_tasks: update_archlinux.yml
+  listen: "update-arch-linux-mirrorlist"
+  vars:
+    mirrors_file: "{{ update_repo_servers_dir }}/{{ update_repo_servers_file }}"
+    mirrors_bkup: "{{ update_repo_servers_dir }}/{{ update_repo_servers_bkup }}"
+

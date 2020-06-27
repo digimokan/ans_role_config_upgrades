@@ -1,0 +1,32 @@
+- name: "Install reflector package"
+  pacman:
+    name: reflector
+    state: present
+  become: true
+  become_user: root
+
+- name: "Create backup copy of mirror-list"
+  copy:
+    src: "{{ mirrors_file }}"
+    dest: "{{ mirrors_bkup }}"
+    force: yes
+  become: true
+  become_user: root
+
+- name: "Find fastest servers, and replace the current mirror-list"
+  command: reflector --country 'United States'
+                      --latest '200'
+                      --protocol 'http'
+                      --protocol 'https'
+                      --sort 'rate'
+                      --save {{ mirrors_file|quote }}
+  become: true
+  become_user: root
+
+- name: "Sync pacman package database (with -Syy)"
+  pacman:
+    update_cache: yes
+    force: yes
+  become: true
+  become_user: root
+

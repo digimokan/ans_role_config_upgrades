@@ -1,0 +1,10 @@
+- name: "Notify mirrorlist update-handler if mirrorlist exceeds age criteria"
+  find:
+    paths: "{{ update_repo_servers_dir }}"
+    patterns: '^mirrorlist$'
+    use_regex: yes
+    age: "{{ update_repo_servers_age }}"
+  register: mirrors_found
+  changed_when: mirrors_found.matched > 0
+  notify: "update-arch-linux-mirrorlist"
+
