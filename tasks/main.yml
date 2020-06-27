@@ -2,3 +2,6 @@
   include_tasks: chk_age_archlinux.yml
   when: ansible_os_family == "Archlinux"
 
+- name: "Execute any repo-server-update handler that was notified"
+  meta: flush_handlers
+
