@@ -29,7 +29,7 @@ Ansible role to update list of linux distro's repo servers.
 
 1. Create `requirements.yml` in ansible project root, and add this content:
 
-   ```
+   ```yaml
    # requirements.yml
    - src: https://github.com/digimokan/ans-role-update-repo-servers
      version: master
@@ -46,7 +46,7 @@ Ansible role to update list of linux distro's repo servers.
 
 3. Include the role like any local role, from the project playbook:
 
-   ```
+   ```yaml
    # playbook.yml
    - hosts: localhost
      connection: local
