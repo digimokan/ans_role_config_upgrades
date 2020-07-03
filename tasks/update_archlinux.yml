@@ -16,7 +16,7 @@
 - name: "Find fastest servers, and replace the current mirror-list"
   command: reflector --country 'United States'
                      --latest '200'
-                     -- age '12'
+                     --age '12'
                      --protocol 'http'
                      --protocol 'https'
                      --sort 'rate'
