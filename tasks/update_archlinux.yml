@@ -13,6 +13,13 @@
   become: true
   become_user: root
 
+- name: "Prior to mirrorlist update, sync pacman package database (with -Syy)"
+  pacman:
+    update_cache: yes
+    force: yes
+  become: true
+  become_user: root
+
 - name: "Find fastest servers, and replace the current mirror-list"
   command: reflector --country 'United States'
                      --latest '200'
@@ -24,7 +31,7 @@
   become: true
   become_user: root
 
-- name: "Sync pacman package database (with -Syy)"
+- name: "Post mirrorlist update, sync pacman package database (with -Syy)"
   pacman:
     update_cache: yes
     force: yes
