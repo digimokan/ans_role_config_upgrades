@@ -1,8 +1,8 @@
 - name: "Notify mirrorlist update-handler if mirrorlist exceeds age criteria"
   find:
-    paths: "{{ repo_servers_dir }}"
+    paths: "{{ repo_servers_file_path | dirname }}"
     patterns: >-
-      ^{{ repo_servers_filename }}$
+      ^{{ repo_servers_file_path | basename }}$
     use_regex: yes
     age: "{{ update_age_cutoff }}"
   register: mirrors_found

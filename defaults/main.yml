@@ -1,8 +1,5 @@
-# directory containing the repo-server-list file
-repo_servers_dir: "/etc/pacman.d"
-
-# repo-server-list filename
-repo_servers_filename: "mirrorlist"
+# repo-server-list full file path
+repo_servers_file_path: "/etc/pacman.d/mirrorlist"
 
 # filename for the backup copy of original repo-server-list
 repo_servers_bkup_filename: "mirrorlist_bkup"
