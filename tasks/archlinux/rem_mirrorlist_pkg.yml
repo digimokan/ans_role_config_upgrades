@@ -1,0 +1,7 @@
+- name: "Remove 'pacman-mirrorlist' package, to prevent pacnew conflicts"
+  pacman:
+    name: pacman-mirrorlist
+    state: absent
+  become: true
+  become_user: root
+

@@ -1,0 +1,16 @@
+- name: "Check if reflector package is installed"
+  command: pacman -Qi reflector
+  register: reflector_installed
+
+- name: "Install reflector with synced pacman package database"
+  block:
+    - name: "Sync pacman package database to bootstrap reflector install"
+      include_tasks: archlinux/sync_pacman_db.yml
+    - name: "Install reflector package"
+      pacman:
+        name: reflector
+        state: present
+  become: true
+  become_user: root
+  when: reflector_installed.rc != 0
+

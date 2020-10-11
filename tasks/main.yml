@@ -1,7 +1,4 @@
 - name: "Check age of 'mirrorlist' file, for Arch Linux"
-  include_tasks: chk_age_archlinux.yml
+  include_tasks: archlinux/main.yml
   when: ansible_os_family == "Archlinux"
-
-- name: "Execute any repo-server-update handler that was notified"
-  meta: flush_handlers
 
