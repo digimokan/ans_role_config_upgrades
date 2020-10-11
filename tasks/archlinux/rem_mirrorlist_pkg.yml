@@ -1,7 +1,11 @@
-- name: "Remove 'pacman-mirrorlist' package, to prevent pacnew conflicts"
-  pacman:
-    name: pacman-mirrorlist
-    state: absent
+- name: "Remove 'pacman-mirrorlist' from upgrade list, to prevent pacnew conflicts"
+  blockinfile:
+    path: "{{ repo_servers_config_file_path }}"
+    insertafter: EOF
+    block: >-
+      IgnorePkg=pacman-mirrorlist
+    marker: "# {mark} ANSIBLE MANAGED BLOCK: skip pacman-mirrorlist upgrade, since using reflector"
+    state: present
   become: true
   become_user: root
 

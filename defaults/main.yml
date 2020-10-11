@@ -4,6 +4,9 @@ repo_servers_file_path: "/etc/pacman.d/mirrorlist"
 # filename for the backup copy of original repo-server-list
 repo_servers_bkup_filename: "mirrorlist_bkup"
 
+# repo-server-list full file path
+repo_servers_config_file_path: "/etc/pacman.conf"
+
 # update the repo-server-list if it is older than this criteria
 # note: use format 1m (minutes), 1h (hours), 1d (days)
 update_age_cutoff: "1d"
