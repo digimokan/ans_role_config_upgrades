@@ -1,6 +1,8 @@
 - name: "Check if reflector package is installed"
   command: pacman -Qi reflector
   register: reflector_installed
+  changed_when: reflector_installed.rc == 1
+  failed_when: reflector_installed.rc > 1
 
 - name: "Install reflector with synced pacman package database"
   block:
@@ -12,5 +14,5 @@
         state: present
   become: true
   become_user: root
-  when: reflector_installed.rc != 0
+  when: reflector_installed.changed
 
