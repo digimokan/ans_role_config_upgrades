@@ -18,6 +18,7 @@ Ansible role to update list of linux distro's repo servers.
 
 * Update list of repo servers, using an age criteria.
 * Make a backup copy of the original list.
+* Prevent conflicts with official repo-server-list during upgrades.
 
 ## Supported Operating Systems
 
