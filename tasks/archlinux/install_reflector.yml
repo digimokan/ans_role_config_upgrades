@@ -1,4 +1,4 @@
-- name: "Check if reflector package is installed"
+- name: "Check reflector installed, and initial package database sync state"
   command: pacman -Qi reflector
   register: reflector_installed
   changed_when: reflector_installed.rc == 1
