@@ -4,6 +4,3 @@
 - name: "Check repo-server-list age, and update as required"
   include_tasks: archlinux/check_and_update.yml
 
-- name: "Remove 'pacman-mirrorlist' package, since reflector is used"
-  include_tasks: archlinux/rem_mirrorlist_pkg.yml
-
