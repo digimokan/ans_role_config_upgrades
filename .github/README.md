@@ -1,8 +1,8 @@
-# ans-role-update-repo-servers
+# ans_role_update_repo_servers
 
 Ansible role to update list of linux distro's repo servers.
 
-[![Release](https://img.shields.io/github/release/digimokan/ans-role-update-repo-servers.svg?label=release)](https://github.com/digimokan/ans-role-update-repo-servers/releases/latest "Latest Release Notes")
+[![Release](https://img.shields.io/github/release/digimokan/ans_role_update_repo_servers.svg?label=release)](https://github.com/digimokan/ans_role_update_repo_servers/releases/latest "Latest Release Notes")
 [![License](https://img.shields.io/badge/license-MIT-blue.svg?label=license)](LICENSE.md "Project License")
 
 ## Table Of Contents
@@ -32,9 +32,7 @@ Ansible role to update list of linux distro's repo servers.
 
    ```yaml
    # requirements.yml
-   - src: https://github.com/digimokan/ans-role-update-repo-servers
-     version: master
-     name: mirrors-update
+   - src: https://github.com/digimokan/ans_role_update_repo_servers
    ```
 
 2. From the project root directory, install/download the role:
@@ -54,7 +52,7 @@ Ansible role to update list of linux distro's repo servers.
      tasks:
        - name: "Update Arch Linux mirrorlist file"
          include_role:
-           name: mirrors-update
+           name: ans_role_update_repo_servers
    ```
 
 ## Role Options
@@ -66,7 +64,7 @@ See the role `defaults` file for full listing:
 ## Contributing
 
 * Feel free to report a bug or propose a feature by opening a new
-  [Issue](https://github.com/digimokan/ans-role-update-repo-servers/issues).
+  [Issue](https://github.com/digimokan/ans_role_update_repo_servers/issues).
 * Follow the project's [Contributing](CONTRIBUTING.md) guidelines.
 * Respect the project's [Code Of Conduct](CODE_OF_CONDUCT.md).
 
