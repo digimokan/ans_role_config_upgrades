@@ -1,7 +1,0 @@
-- name: "Sync pacman package database (with -Syy)"
-  pacman:
-    update_cache: yes
-    force: yes
-  become: true
-  become_user: root
-
