@@ -4,10 +4,8 @@
   changed_when: reflector_installed.rc == 1
   failed_when: reflector_installed.rc > 1
 
-- name: "Install reflector with synced pacman package database"
+- name: "Install reflector package as required"
   block:
-    - name: "Sync pacman package database to bootstrap reflector install"
-      ansible.builtin.include_tasks: archlinux/sync_pacman_db.yml
     - name: "Install reflector package"
       pacman:
         name: reflector
