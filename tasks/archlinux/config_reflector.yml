@@ -1,0 +1,11 @@
+- name: "Update reflector config: '{{ repo_updater_config_file }}'"
+  template:
+    dest: "{{ repo_updater_config_file }}"
+    src: 'reflector_conf.j2'
+    owner: 'root'
+    group: 'root'
+    mode: '644'
+    force: yes
+  become: true
+  become_user: root
+

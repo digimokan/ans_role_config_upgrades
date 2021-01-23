@@ -1,6 +1,9 @@
 - name: "Install reflector package"
   ansible.builtin.include_tasks: archlinux/install_reflector.yml
 
+- name: "Configure reflector operation"
+  ansible.builtin.include_tasks: archlinux/config_reflector.yml
+
 - name: "Check repo-server-list age, and update as required"
   ansible.builtin.include_tasks: archlinux/check_and_update.yml
 

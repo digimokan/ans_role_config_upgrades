@@ -8,3 +8,6 @@ repo_servers_bkup_filename: "mirrorlist_bkup"
 # note: use format 1m (minutes), 1h (hours), 1d (days)
 update_age_cutoff: "1d"
 
+# config for the exec that updates the repos
+repo_updater_config_file: "/etc/xdg/reflector/reflector.conf"
+
