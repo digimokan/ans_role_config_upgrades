@@ -1,5 +1,5 @@
 - name: "Check if mirrorlist exceeds age criteria"
-  find:
+  ansible.builtin.find:
     paths: "{{ repo_servers_file_path | dirname }}"
     patterns: >-
       ^{{ repo_servers_file_path | basename }}$
@@ -9,7 +9,7 @@
   changed_when: mirrors_found.matched > 0
 
 - name: "Update Arch Linux mirrorlist"
-  include_tasks: archlinux/do_archlinux_update.yml
+  ansible.builtin.include_tasks: archlinux/do_archlinux_update.yml
   vars:
     mirrors_file: "{{ repo_servers_file_path }}"
     mirrors_bkup: "{{ repo_servers_file_path | dirname }}/{{ repo_servers_bkup_filename }}"

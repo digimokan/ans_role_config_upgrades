@@ -1,5 +1,5 @@
 - name: "Create backup copy of mirror-list"
-  copy:
+  ansible.builtin.copy:
     src: "{{ mirrors_file }}"
     dest: "{{ mirrors_bkup }}"
     force: yes
@@ -7,13 +7,9 @@
   become_user: root
 
 - name: "Find fastest servers, and replace the current mirror-list"
-  command: reflector --country 'United States'
-                     --latest '200'
-                     --age '12'
-                     --protocol 'http'
-                     --protocol 'https'
-                     --sort 'rate'
-                     --save {{ mirrors_file|quote }}
+  ansible.builtin.service:
+    name: reflector
+    state: started
   become: true
   become_user: root
 

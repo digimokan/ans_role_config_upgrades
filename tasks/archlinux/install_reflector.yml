@@ -1,5 +1,5 @@
 - name: "Check reflector installed, and initial package database sync state"
-  command: pacman -Qi reflector
+  ansible.builtin.command: pacman -Qi reflector
   register: reflector_installed
   changed_when: reflector_installed.rc == 1
   failed_when: reflector_installed.rc > 1
@@ -7,7 +7,7 @@
 - name: "Install reflector with synced pacman package database"
   block:
     - name: "Sync pacman package database to bootstrap reflector install"
-      include_tasks: archlinux/sync_pacman_db.yml
+      ansible.builtin.include_tasks: archlinux/sync_pacman_db.yml
     - name: "Install reflector package"
       pacman:
         name: reflector
