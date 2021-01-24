@@ -74,13 +74,11 @@ print_err_msg() {
 
 quit_err_msg() {
   print_err_msg "${1}"
-  clean_working_build_dirs "$@"
   exit "${2}"
 }
 
 quit_err_msg_with_help() {
   print_err_msg "${1}"
-  clean_working_build_dirs "$@"
   print_usage "${2}"
 }
 
@@ -108,7 +106,7 @@ do_mirrors_update() {
 
 do_system_upgrade() {
   echo "Upgrading system with \'pacman -${sys_upgrade_opts}..."
-  pacman "${sys_upgrade_opts}"
+  pacman -"${sys_upgrade_opts}"
   exit_code="${?}"
   if [ "${exit_code}" != 0 ]; then
     quit_err_msg "system upgrade failure" 10
