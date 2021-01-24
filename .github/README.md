@@ -1,6 +1,6 @@
 # ans_role_update_repo_servers
 
-Ansible role to update list of linux distro's repo servers.
+Ansible role to update list of linux distro's package-repo servers.
 
 [![Release](https://img.shields.io/github/release/digimokan/ans_role_update_repo_servers.svg?label=release)](https://github.com/digimokan/ans_role_update_repo_servers/releases/latest "Latest Release Notes")
 [![License](https://img.shields.io/badge/license-MIT-blue.svg?label=license)](LICENSE.md "Project License")
@@ -16,9 +16,10 @@ Ansible role to update list of linux distro's repo servers.
 
 ## Purpose
 
-* Update list of repo servers, using an age criteria.
-* Make a backup copy of the original list.
-* Prevent conflicts with official repo-server-list during upgrades.
+* Configure updates for list of the system's package-repo servers
+* Do the package-repo-server-list update, via include_task:
+    * Use optional age criteria to determine when to update list.
+    * Make a backup copy of the original list.
 
 ## Supported Operating Systems
 
@@ -43,17 +44,41 @@ Ansible role to update list of linux distro's repo servers.
 
    * _NOTE:_ `--force-with-deps` _ensures subsequent calls download updates_
 
-3. Include the role like any local role, from the project playbook:
+3. Include the main role, to setup the package-repo-list-update configuration:
 
    ```yaml
-   # playbook.yml
-   - hosts: localhost
-     connection: local
-     tasks:
-       - name: "Update Arch Linux mirrorlist file"
-         include_role:
-           name: ans_role_update_repo_servers
+   - name: "Set up OS package-repo-list-update configuration"
+     include_role:
+       name: ans_role_update_repo_servers
    ```
+
+4. Use role "utility task" (from the `inc` directory) to do the
+   package-repo-list update:
+
+   ```yaml
+   - name: "Update the OS package-repo list"
+     include_role:
+       name: ans_role_update_repo_servers
+       tasks_from: inc/update_pkg_repo_list.yml
+     vars:
+       pkg_repo_list_file_path: "/etc/pacman.d/mirrorlist"
+       pkg_repo_list_bkup_filename: "mirrorlist_bkup"
+       pkg_repo_list_age_cutoff: "1d"
+   ```
+
+### Use From Parent Role As Dependency
+
+1. List in parent role's `meta/main.yml`, with `never` tag to avoid duplication:
+
+   ```yaml
+   dependencies:
+     - src: https://github.com/digimokan/ans_role_update_repo_servers
+       tags:
+         - never
+   ```
+
+2. Call role with step 3 or 4 from [Use From Playbook](#use-from-playbook)
+   section.
 
 ## Role Options
 

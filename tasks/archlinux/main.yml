@@ -1,6 +1,6 @@
 - name: "Install reflector package"
-  ansible.builtin.include_tasks: archlinux/install_reflector.yml
-
-- name: "Configure reflector operation"
-  ansible.builtin.include_tasks: archlinux/config_reflector.yml
-
+  pacman:
+    name: reflector
+    state: present
+  become: true
+  become_user: root

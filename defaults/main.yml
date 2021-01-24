@@ -1,13 +1,10 @@
-# repo-server-list full file path
-repo_servers_file_path: "/etc/pacman.d/mirrorlist"
-
-# filename for the backup copy of original repo-server-list
-repo_servers_bkup_filename: "mirrorlist_bkup"
-
-# update the repo-server-list if it is older than this criteria
-# note: use format 1m (minutes), 1h (hours), 1d (days)
-update_age_cutoff: "1d"
-
-# config for the exec that updates the repos
-repo_updater_config_file: "/etc/xdg/reflector/reflector.conf"
+# parameters for running the package-repo-list update command
+repo_update_params: >-
+  --verbose
+  --country 'United States'
+  --latest 20
+  --age 12
+  --protocol 'https'
+  --sort 'rate'
+  --fastest 10
 

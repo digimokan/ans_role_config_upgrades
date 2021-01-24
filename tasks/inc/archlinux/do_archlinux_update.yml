@@ -7,9 +7,7 @@
   become_user: root
 
 - name: "Find fastest servers, and replace the current mirror-list"
-  ansible.builtin.service:
-    name: reflector
-    state: started
+  command: reflector {{ repo_update_params }} --save {{ mirrors_file|quote }}
   become: true
   become_user: root
 

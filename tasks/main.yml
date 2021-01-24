@@ -1,4 +1,4 @@
-- name: "Check age of 'mirrorlist' file, for Arch Linux"
+- name: "Configure 'mirrorlist' file updates, for Arch Linux"
   ansible.builtin.include_tasks: archlinux/main.yml
   when: ansible_os_family == "Archlinux"
 

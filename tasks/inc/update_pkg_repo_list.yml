@@ -1,0 +1,13 @@
+- name: "Update 'mirrorlist' file, for Arch Linux"
+  ansible.builtin.include_tasks: archlinux/update_repos_arch.yml
+  when: ansible_os_family == "Archlinux"
+  vars:
+    # repo-server-list full file path
+    pkg_repo_list_file_path: "/etc/pacman.d/mirrorlist"
+    # filename for the backup copy of original repo-server-list
+    pkg_repo_list_bkup_filename: "mirrorlist_bkup"
+    # update the repo-server-list if it is older than this criteria
+    # note: use format 1m (minutes), 1h (hours), 1d (days)
+    # note: use "1s" to effectively ignore age criteria, and force update
+    pkg_repo_list_age_cutoff: "1s"
+
