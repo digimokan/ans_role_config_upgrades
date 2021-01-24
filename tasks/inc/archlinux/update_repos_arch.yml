@@ -9,7 +9,7 @@
   changed_when: mirrors_found.matched > 0
 
 - name: "Update Arch Linux mirrorlist"
-  ansible.builtin.include_tasks: archlinux/do_archlinux_update.yml
+  ansible.builtin.include_tasks: inc/archlinux/do_archlinux_update.yml
   vars:
     mirrors_file: "{{ pkg_repo_list_file_path }}"
     mirrors_bkup: "{{ pkg_repo_list_file_path | dirname }}/{{ pkg_repo_list_bkup_filename }}"
