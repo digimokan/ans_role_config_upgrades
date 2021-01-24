@@ -89,7 +89,7 @@ check_running_as_root() {
 }
 
 backup_mirrors_file() {
-  echo "Saving backup mirrorlist at \'${mirrors_bkup_path}\'..."
+  echo "Saving backup mirrorlist at '${mirrors_bkup_path}'..."
   cp "${mirrors_path}" "${mirrors_bkup_path}"
 }
 
@@ -105,7 +105,7 @@ do_mirrors_update() {
 }
 
 do_system_upgrade() {
-  echo "Upgrading system with \'pacman -${sys_upgrade_opts}..."
+  echo "Upgrading system with 'pacman -${sys_upgrade_opts}'..."
   pacman -"${sys_upgrade_opts}"
   exit_code="${?}"
   if [ "${exit_code}" != 0 ]; then
