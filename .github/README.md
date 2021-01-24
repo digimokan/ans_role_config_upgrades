@@ -88,7 +88,7 @@ See the role `defaults` file for main role vars listing:
 
 See the `update_pkg_repo_list` task vars listing:
 
-  * [defaults/main.yml](../tasks/inc/update_pkg_repo_list.yml)
+  * [inc/update_pkg_repo_list.yml](../tasks/inc/update_pkg_repo_list.yml)
 
 ## Contributing
 
