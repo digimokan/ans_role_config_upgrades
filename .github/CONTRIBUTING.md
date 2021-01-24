@@ -6,15 +6,15 @@
 
 1. [GITHUB PAGE] Fork the project repo:
 
-    * click "fork" from https://github.com/digimokan/ans_role_update_repo_servers
+    * click "fork" from https://github.com/digimokan/ans_role_cfg_pkg_repo_list_updates
 
 2. [LOCAL] Create local repo:
 
-        $ git clone --recurse-submodules https://github.com/[your-github-username]/ans_role_update_repo_servers
+        $ git clone --recurse-submodules https://github.com/[your-github-username]/ans_role_cfg_pkg_repo_list_updates
 
 3. [LOCAL] Link upstream repo:
 
-        $ git remote add upstream https://github.com/digimokan/ans_role_update_repo_servers
+        $ git remote add upstream https://github.com/digimokan/ans_role_cfg_pkg_repo_list_updates
 
 ### Development Workflow
 

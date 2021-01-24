@@ -1,8 +1,8 @@
-# ans_role_update_repo_servers
+# ans_role_cfg_pkg_repo_list_updates
 
 Ansible role to update list of linux distro's package-repo servers.
 
-[![Release](https://img.shields.io/github/release/digimokan/ans_role_update_repo_servers.svg?label=release)](https://github.com/digimokan/ans_role_update_repo_servers/releases/latest "Latest Release Notes")
+[![Release](https://img.shields.io/github/release/digimokan/ans_role_cfg_pkg_repo_list_updates.svg?label=release)](https://github.com/digimokan/ans_role_cfg_pkg_repo_list_updates/releases/latest "Latest Release Notes")
 [![License](https://img.shields.io/badge/license-MIT-blue.svg?label=license)](LICENSE.md "Project License")
 
 ## Table Of Contents
@@ -33,7 +33,7 @@ Ansible role to update list of linux distro's package-repo servers.
 
    ```yaml
    # requirements.yml
-   - src: https://github.com/digimokan/ans_role_update_repo_servers
+   - src: https://github.com/digimokan/ans_role_cfg_pkg_repo_list_updates
    ```
 
 2. From the project root directory, install/download the role:
@@ -49,7 +49,7 @@ Ansible role to update list of linux distro's package-repo servers.
    ```yaml
    - name: "Set up OS package-repo-list-update configuration"
      include_role:
-       name: ans_role_update_repo_servers
+       name: ans_role_cfg_pkg_repo_list_updates
    ```
 
 4. Use role "utility task" (from the `inc` directory) to do the
@@ -58,7 +58,7 @@ Ansible role to update list of linux distro's package-repo servers.
    ```yaml
    - name: "Update the OS package-repo list"
      include_role:
-       name: ans_role_update_repo_servers
+       name: ans_role_cfg_pkg_repo_list_updates
        tasks_from: inc/update_pkg_repo_list.yml
      vars:
        pkg_repo_list_file_path: "/etc/pacman.d/mirrorlist"
@@ -72,7 +72,7 @@ Ansible role to update list of linux distro's package-repo servers.
 
    ```yaml
    dependencies:
-     - src: https://github.com/digimokan/ans_role_update_repo_servers
+     - src: https://github.com/digimokan/ans_role_cfg_pkg_repo_list_updates
        tags:
          - never
    ```
@@ -93,7 +93,7 @@ See the `update_pkg_repo_list` task vars listing:
 ## Contributing
 
 * Feel free to report a bug or propose a feature by opening a new
-  [Issue](https://github.com/digimokan/ans_role_update_repo_servers/issues).
+  [Issue](https://github.com/digimokan/ans_role_cfg_pkg_repo_list_updates/issues).
 * Follow the project's [Contributing](CONTRIBUTING.md) guidelines.
 * Respect the project's [Code Of Conduct](CODE_OF_CONDUCT.md).
 
