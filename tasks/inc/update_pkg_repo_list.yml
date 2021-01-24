@@ -1,5 +1,5 @@
 - name: "Update 'mirrorlist' file, for Arch Linux"
-  ansible.builtin.include_tasks: archlinux/update_repos_arch.yml
+  ansible.builtin.include_tasks: inc/update_repos_arch.yml
   when: ansible_os_family == "Archlinux"
   vars:
     # repo-server-list full file path
