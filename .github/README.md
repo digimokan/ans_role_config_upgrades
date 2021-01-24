@@ -16,7 +16,8 @@ Ansible role to update list of linux distro's package-repo servers.
 
 ## Purpose
 
-* Configure updates for list of the system's package-repo servers
+* Configure updates for list of the system's package-repo servers.
+* Arch Linux: install `do_mirrors_sysupgrade.sh` script in `/usr/local/bin/`.
 * Do the package-repo-server-list update, via include_task:
     * Use optional age criteria to determine when to update list.
     * Make a backup copy of the original list.

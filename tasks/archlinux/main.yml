@@ -4,3 +4,15 @@
     state: present
   become: true
   become_user: root
+
+- name: "Create '/usr/local/bin/do_mirrors_sysupgrade.sh' utility script"
+  template:
+    dest: '/usr/local/bin/do_mirrors_sysupgrade.sh'
+    src: 'do_mirrors_sysupgrade.j2'
+    owner: 'root'
+    group: 'root'
+    mode: '755'
+    force: yes
+  become: true
+  become_user: root
+

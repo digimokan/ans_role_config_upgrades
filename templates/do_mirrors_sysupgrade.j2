@@ -1,0 +1,131 @@
+#!/bin/sh
+
+################################################################################
+# purpose:   update Arch Linux mirrors list, and do system upgrade
+# args/opts: see usage (run with -h option)
+################################################################################
+
+# global vars:
+mirrors_only='false'                               # user-sel: update mirs only
+mirrors_path='/etc/pacman.d/mirrorlist'            # mirrorlist file
+mirrors_bkup_path='/etc/pacman.d/mirrorlist_mbkup' # mirrorlist backup copy
+sys_upgrade_opts='Syyuu'                           # system-upgrade cmd opts
+
+print_usage() {
+  echo 'USAGE:'
+  echo "  $(basename "${0}")        -h"
+  echo "  sudo  $(basename "${0}")  [-m]"
+  echo 'OPTIONS:'
+  echo '  -h, --help'
+  echo '      print this help message'
+  echo '  -m --mirrorlist-update-only'
+  echo '      only update mirrorlist (do not perform system upgrade)'
+  echo '      WARNING: archwiki recommends against mirrorlist-update-only'
+  echo 'EXIT CODES:'
+  echo '    0  ok'
+  echo '    1  usage, arguments, or options error'
+  echo '    5  mirrors update error'
+  echo '   10  system upgrade error'
+  echo '  255  unknown error'
+  exit "${1}"
+}
+
+get_cmd_opts_and_args() {
+  while getopts ':hm-:' option; do
+    case "${option}" in
+      h)  handle_help ;;
+      m)  handle_mirrorlist_update_only ;;
+      -)  case ${OPTARG} in
+            help)                        handle_help ;;
+            help=*)                      handle_illegal_option_arg "${OPTARG}" ;;
+            mirrorlist-update-only)      handle_mirrorlist_update_only ;;
+            mirrorlist-update-only=*)    handle_illegal_option_arg "${OPTARG}" ;;
+            '')                          break ;; # non-option arg starting with '-'
+            *)                           handle_unknown_option "${OPTARG}" ;;
+          esac ;;
+      \?) handle_unknown_option "${OPTARG}" ;;
+    esac
+  done
+}
+
+handle_help() {
+  print_usage 0
+}
+
+handle_mirrorlist_update_only() {
+  mirrors_only='true'
+}
+
+handle_unknown_option() {
+  err_msg="unknown option \"${1}\""
+  quit_err_msg_with_help "${err_msg}" 1
+}
+
+handle_illegal_option_arg() {
+  err_msg="illegal argument in \"${1}\""
+  quit_err_msg_with_help "${err_msg}" 1
+}
+
+print_err_msg() {
+  echo 'ERROR:'
+  printf "$(basename "${0}"): %s\\n\\n" "${1}"
+}
+
+quit_err_msg() {
+  print_err_msg "${1}"
+  clean_working_build_dirs "$@"
+  exit "${2}"
+}
+
+quit_err_msg_with_help() {
+  print_err_msg "${1}"
+  clean_working_build_dirs "$@"
+  print_usage "${2}"
+}
+
+check_running_as_root() {
+  if [ "$(id -u)" != "0" ]; then
+    quit_err_msg_with_help "must run this script as root" 1
+  fi
+}
+
+backup_mirrors_file() {
+  echo "Saving backup mirrorlist at \'${mirrors_bkup_path}\'..."
+  cp "${mirrors_path}" "${mirrors_bkup_path}"
+}
+
+do_mirrors_update() {
+  echo 'Updating mirror list with reflector...'
+  reflector {{ repo_update_params }} --save "${mirrors_path}"
+  exit_code="${?}"
+  if [ "${exit_code}" != 0 ]; then
+    quit_err_msg "mirrors update failure" 5
+  fi
+  # WARNING: archwiki recommends against updating mirrors without sysupgrade:
+  # https://wiki.archlinux.org/index.php/Mirrors#Force_pacman_to_refresh_the_package_lists
+}
+
+do_system_upgrade() {
+  echo "Upgrading system with \'pacman -${sys_upgrade_opts}..."
+  pacman "${sys_upgrade_opts}"
+  exit_code="${?}"
+  if [ "${exit_code}" != 0 ]; then
+    quit_err_msg "system upgrade failure" 10
+  fi
+  # NOTE: archwiki specifically recommends these system-upgrade opts:
+  # https://wiki.archlinux.org/index.php/Mirrors#Force_pacman_to_refresh_the_package_lists
+}
+
+main() {
+  get_cmd_opts_and_args "$@"
+  check_running_as_root "$@"
+  backup_mirrors_file "$@"
+  do_mirrors_update "$@"
+  if [ "${mirrors_only}" = 'false' ]; then
+    do_system_upgrade "$@"
+  fi
+  exit 0
+}
+
+main "$@"
+
