@@ -82,9 +82,13 @@ Ansible role to update list of linux distro's package-repo servers.
 
 ## Role Options
 
-See the role `defaults` file for full listing:
+See the role `defaults` file for main role vars listing:
 
   * [defaults/main.yml](../defaults/main.yml)
+
+See the `update_pkg_repo_list` task vars listing:
+
+  * [defaults/main.yml](../tasks/inc/update_pkg_repo_list.yml)
 
 ## Contributing
 
