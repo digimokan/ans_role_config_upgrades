@@ -1,12 +1,12 @@
 - name: "Install reflector package"
-  pacman:
+  community.general.pacman:
     name: reflector
     state: present
   become: true
   become_user: root
 
 - name: "Create '/usr/local/bin/do_mirrors_sysupgrade.sh' utility script"
-  template:
+  ansible.builtin.template:
     dest: '/usr/local/bin/do_mirrors_sysupgrade.sh'
     src: 'do_mirrors_sysupgrade.j2'
     owner: 'root'

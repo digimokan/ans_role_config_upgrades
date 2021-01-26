@@ -49,7 +49,7 @@ Ansible role to update list of linux distro's package-repo servers.
 
    ```yaml
    - name: "Set up OS package-repo-list-update configuration"
-     include_role:
+     ansible.builtin.include_role:
        name: ans_role_config_pkg_repo_list_updates
    ```
 
@@ -58,7 +58,7 @@ Ansible role to update list of linux distro's package-repo servers.
 
    ```yaml
    - name: "Update the OS package-repo list"
-     include_role:
+     ansible.builtin.include_role:
        name: ans_role_config_pkg_repo_list_updates
        tasks_from: inc/update_pkg_repo_list.yml
      vars:
