@@ -6,22 +6,38 @@
 # meta:      script installed by ansible ans_role_config_pkg_repo_list_updates
 ################################################################################
 
-# global vars:
-mirrors_only='false'                               # user-sel: update mirs only
-mirrors_path='/etc/pacman.d/mirrorlist'            # mirrorlist file
-mirrors_bkup_path='/etc/pacman.d/mirrorlist_mbkup' # mirrorlist backup copy
-sys_upgrade_opts='Syyuu'                           # system-upgrade cmd opts
+# GLOBAL VARS:
+
+# User Selection Options
+backup_mirrorlist='false'
+mirrors_update='false'
+force_mirrors_update='false'
+reinstall_keyring='false'
+system_upgrade='false'
+
+# Paths And Commands
+mirrors_path='/etc/pacman.d/mirrorlist'
+mirrors_bkup_path='/etc/pacman.d/mirrorlist_mbkup'
+keyring_pkg_name='archlinux-keyring'
+# NOTE: archwiki specifically recommends these system-upgrade opts:
+# https://wiki.archlinux.org/index.php/Mirrors#Force_pacman_to_refresh_the_package_lists
+sys_upgrade_opts='Syyuu'
 
 print_usage() {
   echo 'USAGE:'
   echo "  $(basename "${0}")        -h"
-  echo "  sudo  $(basename "${0}")  [-m]"
+  echo "  sudo  $(basename "${0}")  [-b]  [-m]  [-k]  -s"
   echo 'OPTIONS:'
   echo '  -h, --help'
   echo '      print this help message'
-  echo '  -m --mirrorlist-update-only'
-  echo '      only update mirrorlist (do not perform system upgrade)'
-  echo '      WARNING: archwiki recommends against mirrorlist-update-only'
+  echo '  -b --backup-mirrorlist'
+  echo '      create backup copy of system mirrorlist'
+  echo '  -m --mirrorlist-update'
+  echo '      update system mirrorlist of package servers'
+  echo '  -k --reinstall-archlinux-keyring'
+  echo '      if sysupgrade key errors, try again with this opt'
+  echo '  -s --system-upgrade'
+  echo '      upgrade all system packages from official repos'
   echo 'EXIT CODES:'
   echo '    0  ok'
   echo '    1  usage, arguments, or options error'
@@ -32,15 +48,25 @@ print_usage() {
 }
 
 get_cmd_opts_and_args() {
-  while getopts ':hm-:' option; do
+  while getopts ':hbmMks-:' option; do
     case "${option}" in
       h)  handle_help ;;
-      m)  handle_mirrorlist_update_only ;;
+      b)  handle_backup_mirrorlist ;;
+      m)  handle_mirrorlist_update ;;
+      M)  handle_force_mirrorlist_update ;;
+      k)  handle_reinstall_keyring ;;
+      s)  handle_system_upgrade ;;
       -)  case ${OPTARG} in
             help)                        handle_help ;;
             help=*)                      handle_illegal_option_arg "${OPTARG}" ;;
-            mirrorlist-update-only)      handle_mirrorlist_update_only ;;
-            mirrorlist-update-only=*)    handle_illegal_option_arg "${OPTARG}" ;;
+            backup-mirrorlist)           handle_backup_mirrorlist ;;
+            backup-mirrorlist=*)         handle_illegal_option_arg "${OPTARG}" ;;
+            mirrorlist-update)           handle_mirrorlist_update ;;
+            mirrorlist-update=*)         handle_illegal_option_arg "${OPTARG}" ;;
+            reinstall-keyring)           handle_reinstall_keyring ;;
+            reinstall-keyring=*)         handle_illegal_option_arg "${OPTARG}" ;;
+            system-upgrade)              handle_system_upgrade ;;
+            system-upgrade=*)            handle_illegal_option_arg "${OPTARG}" ;;
             '')                          break ;; # non-option arg starting with '-'
             *)                           handle_unknown_option "${OPTARG}" ;;
           esac ;;
@@ -53,8 +79,24 @@ handle_help() {
   print_usage 0
 }
 
-handle_mirrorlist_update_only() {
-  mirrors_only='true'
+handle_backup_mirrorlist() {
+  backup_mirrorlist='true'
+}
+
+handle_mirrorlist_update() {
+  mirrors_update='true'
+}
+
+handle_force_mirrorlist_update() {
+  force_mirrors_update='true'
+}
+
+handle_reinstall_keyring() {
+  reinstall_keyring='true'
+}
+
+handle_system_upgrade() {
+  system_upgrade='true'
 }
 
 handle_unknown_option() {
@@ -82,26 +124,42 @@ quit_err_msg_with_help() {
   print_usage "${2}"
 }
 
+check_option_conflicts() {
+  if [ "${mirrors_update}" = 'true' ] && [ "${system_upgrade}" = 'false' ]; then
+    # WARNING: archwiki recommends against updating mirrors without sysupgrade:
+    # https://wiki.archlinux.org/index.php/Mirrors#Force_pacman_to_refresh_the_package_lists
+    quit_err_msg_with_help "Per ArchWiki, don't update mirrors without sysupgrade. Override with '-M' option" 1
+  fi
+}
+
 check_running_as_root() {
   if [ "$(id -u)" != "0" ]; then
     quit_err_msg_with_help "must run this script as root" 1
   fi
 }
 
-backup_mirrors_file() {
-  echo "Saving backup mirrorlist at '${mirrors_bkup_path}'..."
+do_backup_mirrorlist() {
+  echo "Saving backup mirrorlist copy at '${mirrors_bkup_path}'..."
   cp "${mirrors_path}" "${mirrors_bkup_path}"
 }
 
 do_mirrors_update() {
   echo 'Updating mirror list with reflector...'
+  # shellcheck disable=SC1083
   reflector {{ repo_update_params }} --save "${mirrors_path}"
   exit_code="${?}"
   if [ "${exit_code}" != 0 ]; then
     quit_err_msg "mirrors update failure" 5
   fi
-  # WARNING: archwiki recommends against updating mirrors without sysupgrade:
-  # https://wiki.archlinux.org/index.php/Mirrors#Force_pacman_to_refresh_the_package_lists
+}
+
+do_reinstall_keyring() {
+  echo "Reinstalling keyring with 'pacman -S ${keyring_pkg_name}'..."
+  pacman -S "${keyring_pkg_name}"
+  exit_code="${?}"
+  if [ "${exit_code}" != 0 ]; then
+    quit_err_msg "${keyring_pkg_name} package upgrade failure" 10
+  fi
 }
 
 do_system_upgrade() {
@@ -111,16 +169,22 @@ do_system_upgrade() {
   if [ "${exit_code}" != 0 ]; then
     quit_err_msg "system upgrade failure" 10
   fi
-  # NOTE: archwiki specifically recommends these system-upgrade opts:
-  # https://wiki.archlinux.org/index.php/Mirrors#Force_pacman_to_refresh_the_package_lists
 }
 
 main() {
   get_cmd_opts_and_args "$@"
+  check_option_conflicts "$@"
   check_running_as_root "$@"
-  backup_mirrors_file "$@"
-  do_mirrors_update "$@"
-  if [ "${mirrors_only}" = 'false' ]; then
+  if [ "${backup_mirrorlist}" = 'true' ]; then
+    do_backup_mirrorlist "$@"
+  fi
+  if [ "${mirrors_update}" = 'true' ] || [ "${force_mirrors_update}" = 'true' ]; then
+    do_mirrors_update "$@"
+  fi
+  if [ "${reinstall_keyring}" = 'true' ]; then
+    do_reinstall_keyring "$@"
+  fi
+  if [ "${system_upgrade}" = 'true' ]; then
     do_system_upgrade "$@"
   fi
   exit 0
