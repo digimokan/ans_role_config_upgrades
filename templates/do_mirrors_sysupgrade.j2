@@ -9,6 +9,7 @@
 # GLOBAL VARS:
 
 # User Selection Options
+dryrun_system_upgrade='false'
 backup_mirrorlist='false'
 mirrors_update='false'
 force_mirrors_update='false'
@@ -26,10 +27,13 @@ sys_upgrade_opts='Syyuu'
 print_usage() {
   echo 'USAGE:'
   echo "  $(basename "${0}")        -h"
+  echo "  $(basename "${0}")        -n"
   echo "  sudo  $(basename "${0}")  [-b]  [-m]  [-k]  -s"
   echo 'OPTIONS:'
   echo '  -h, --help'
   echo '      print this help message'
+  echo '  -n --dryrun-system-upgrade'
+  echo '      list packages that would be updated, then exit'
   echo '  -b --backup-mirrorlist'
   echo '      create backup copy of system mirrorlist'
   echo '  -m --mirrorlist-update'
@@ -48,9 +52,10 @@ print_usage() {
 }
 
 get_cmd_opts_and_args() {
-  while getopts ':hbmMks-:' option; do
+  while getopts ':hnbmMks-:' option; do
     case "${option}" in
       h)  handle_help ;;
+      n)  handle_dryrun_system_upgrade ;;
       b)  handle_backup_mirrorlist ;;
       m)  handle_mirrorlist_update ;;
       M)  handle_force_mirrorlist_update ;;
@@ -59,6 +64,8 @@ get_cmd_opts_and_args() {
       -)  case ${OPTARG} in
             help)                        handle_help ;;
             help=*)                      handle_illegal_option_arg "${OPTARG}" ;;
+            dryrun-system-upgrade)       handle_dryrun_system_upgrade ;;
+            dryrun-system-upgrade=*)     handle_illegal_option_arg "${OPTARG}" ;;
             backup-mirrorlist)           handle_backup_mirrorlist ;;
             backup-mirrorlist=*)         handle_illegal_option_arg "${OPTARG}" ;;
             mirrorlist-update)           handle_mirrorlist_update ;;
@@ -77,6 +84,10 @@ get_cmd_opts_and_args() {
 
 handle_help() {
   print_usage 0
+}
+
+handle_dryrun_system_upgrade() {
+  dryrun_system_upgrade='true'
 }
 
 handle_backup_mirrorlist() {
@@ -138,6 +149,16 @@ check_running_as_root() {
   fi
 }
 
+do_dryrun_system_upgrade() {
+  checkupdates
+  exit_code="${?}"
+  if [ "${exit_code}" == 0 ]; then
+    exit 0
+  else
+    quit_err_msg "${keyring_pkg_name} system upgrade dryrun failure" 10
+  fi
+}
+
 do_backup_mirrorlist() {
   echo "Saving backup mirrorlist copy at '${mirrors_bkup_path}'..."
   cp "${mirrors_path}" "${mirrors_bkup_path}"
@@ -175,6 +196,9 @@ main() {
   get_cmd_opts_and_args "$@"
   check_option_conflicts "$@"
   check_running_as_root "$@"
+  if [ "${dryrun_system_upgrade}" = 'true' ]; then
+    do_dryrun_system_upgrade "$@"
+  fi
   if [ "${backup_mirrorlist}" = 'true' ]; then
     do_backup_mirrorlist "$@"
   fi
