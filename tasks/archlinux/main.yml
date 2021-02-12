@@ -1,6 +1,13 @@
-- name: "Install reflector package"
+- name: "Install 'reflector' package"
   community.general.pacman:
     name: reflector
+    state: present
+  become: true
+  become_user: root
+
+- name: "Install 'pacman-contrib' package"
+  community.general.pacman:
+    name: pacman-contrib
     state: present
   become: true
   become_user: root
