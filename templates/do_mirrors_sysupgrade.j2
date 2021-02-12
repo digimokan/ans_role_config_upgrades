@@ -195,10 +195,10 @@ do_system_upgrade() {
 main() {
   get_cmd_opts_and_args "$@"
   check_option_conflicts "$@"
-  check_running_as_root "$@"
   if [ "${dryrun_system_upgrade}" = 'true' ]; then
     do_dryrun_system_upgrade "$@"
   fi
+  check_running_as_root "$@"
   if [ "${backup_mirrorlist}" = 'true' ]; then
     do_backup_mirrorlist "$@"
   fi
