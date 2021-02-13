@@ -12,14 +12,16 @@
   become: true
   become_user: root
 
-- name: "Create '/usr/local/bin/do_mirrors_sysupgrade.sh' utility script"
+- name: "Create '/usr/local/bin/{{ script_name }}.sh' utility script"
   ansible.builtin.template:
-    dest: '/usr/local/bin/do_mirrors_sysupgrade.sh'
-    src: 'do_mirrors_sysupgrade.j2'
+    dest: "/usr/local/bin/{{ script_name }}.sh"
+    src: "{{ script_name }}.j2"
     owner: 'root'
     group: 'root'
     mode: '755'
     force: yes
+  vars:
+    script_name: 'do_mirrors_sysupgrade'
   become: true
   become_user: root
 
