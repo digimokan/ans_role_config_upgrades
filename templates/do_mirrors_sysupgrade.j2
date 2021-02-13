@@ -152,7 +152,7 @@ check_running_as_root() {
 do_dryrun_system_upgrade() {
   checkupdates
   exit_code="${?}"
-  if [ "${exit_code}" == 0 ]; then
+  if [ "${exit_code}" = 0 ]; then
     exit 0
   else
     quit_err_msg "${keyring_pkg_name} system upgrade dryrun failure" 10
