@@ -48,7 +48,6 @@ print_usage() {
   echo 'EXIT CODES:'
   echo '    0  ok'
   echo '    1  usage, arguments, or options error'
-  echo '    5  package query error'
   echo '   10  package uninstall or deletion error'
   echo '  255  unknown error'
   exit "${1}"
@@ -192,14 +191,10 @@ do_uninstall_orphan_packages() {
 }
 
 do_delete_cache_packages() {
-  echo "Searching for cache packages with 'paccache -k${num_to_keep} -dv'..."
-  pkgs_found=$(paccache "-k${num_to_keep}" "-dv")
-  if [ "${pkgs_found}" = '' ]; then
-    echo "No cache packages were found."
+  if [ "${dry_run}" = 'true' ]; then
+    echo "Searching for cache packages with 'paccache -k${num_to_keep} -dv'..."
+    paccache "-k${num_to_keep}" "-dv"
   else
-    echo "${pkgs_found}"
-  fi
-  if [ "${dry_run}" = 'false' ] && [ "${pkgs_found}" != '' ]; then
     delete_cache_cmd="paccache -k${num_to_keep} -r"
     echo "Deleting cache packages with '${delete_cache_cmd}'..."
     eval "$delete_cache_cmd"
@@ -211,16 +206,12 @@ do_delete_cache_packages() {
 }
 
 do_delete_uninstalled_packages() {
-  echo "Searching for uninstalled packages in cache with 'paccache ${find_uninstalled_opt}'..."
-  pkgs_found=$(paccache ${find_uninstalled_opt})
-  if [ "${pkgs_found}" = '' ]; then
-    echo "No uninstalled packages in cache were found."
+  if [ "${dry_run}" = 'true' ]; then
+    echo "Searching for uninstalled packages in cache with 'paccache ${find_uninstalled_opt}'..."
+    paccache "${find_uninstalled_opt}"
   else
-    echo "${pkgs_found}"
-  fi
-  if [ "${dry_run}" = 'false' ] && [ "${pkgs_found}" != '' ]; then
     delete_uninstalled_cmd="paccache ${delete_uninstalled_opt}"
-    echo "Deleting cache packages with '${delete_uninstalled_cmd}'..."
+    echo "Deleting uninstalled-cache packages with '${delete_uninstalled_cmd}'..."
     eval "$delete_uninstalled_cmd"
     exit_code="${?}"
     if [ "${exit_code}" != 0 ]; then
