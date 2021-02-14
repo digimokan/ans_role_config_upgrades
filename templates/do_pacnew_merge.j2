@@ -1,0 +1,254 @@
+#!/bin/sh
+
+################################################################################
+# purpose:   handle "conflict file" after sysupgrade (file_x, file_x.pacnew)
+# args/opts: see usage (run with -h option)
+# meta:      script installed by ansible ans_role_config_package_upgrades
+################################################################################
+
+# GLOBAL VARS:
+
+# User Selection Options
+backup_conflict_file='false'
+merge_conflict_file='false'
+rename_pacnew_as_merged='false'
+list_pacnew_files='false'
+
+# User Selection Arg
+conflict_file_path=''
+
+# Paths, Commands, And Defaults
+backup_ext='.abkup'
+merged_ext='.merged'
+pacnew_search_cmd='find /etc -regextype posix-extended -regex ".+\.pacnew" 2> /dev/null'
+
+print_usage() {
+  echo 'USAGE:'
+  echo "  $(basename "${0}")        -h"
+  echo "  sudo  $(basename "${0}")  -b  [-x <backup_ext>]  <file_path>"
+  echo "  sudo  $(basename "${0}")  -m  <file_path>"
+  echo "  sudo  $(basename "${0}")  -b  [-x <backup_ext>]  -m  <file_path>"
+  echo "  sudo  $(basename "${0}")  -r  [-t <merged_ext>]  <file_path>"
+  echo "  sudo  $(basename "${0}")  -l"
+  echo 'ARGUMENTS:'
+  echo '  <file_path>'
+  echo '      path to the "conflict file" (<file_path>, <file_path>.pacnew)'
+  echo 'OPTIONS:'
+  echo '  -h, --help'
+  echo '      print this help message'
+  echo '  -b, --backup-conflict-file'
+  echo "      backup existing <file_path> to <file_path>${backup_ext}"
+  echo '  -x <backup_ext>, --backup-file-extension=<backup_ext>'
+  echo "      specify the backup-file extension (default '${backup_ext}')"
+  echo '  -m, --merge-conflict-file'
+  echo '      edit <file_path> and merge in updates from <file_path>.pacnew'
+  echo '  -r, --rename-pacnew-as-merged'
+  echo "      after merge, rename <file_path>.pacnew as <file_path>.pacnew.${merged_ext}"
+  echo '  -t <merged_ext>, --merged-file-extension=<merged_ext>'
+  echo "      specify the merged-file extension (default '${merged_ext}')"
+  echo '  -l, --list-pacnew-files'
+  echo '      list any .pacnew files found on system, then exit'
+  echo 'EXIT CODES:'
+  echo '    0  ok'
+  echo '    1  usage, arguments, or options error'
+  echo '    5  conflict file path error'
+  echo '   10  conflict file merge/search error'
+  echo '  255  unknown error'
+  exit "${1}"
+}
+
+get_cmd_opts() {
+  while getopts ':hbx:mrt:l-:' option; do
+    case "${option}" in
+      h)  handle_help ;;
+      b)  handle_backup_conflict_file ;;
+      x)  handle_backup_file_extension "${OPTARG}" ;;
+      m)  handle_merge_conflict_file ;;
+      r)  handle_rename_pacnew_as_merged ;;
+      t)  handle_merged_file_extension "${OPTARG}" ;;
+      l)  handle_list_pacnew_files ;;
+      -)  LONG_OPTARG="${OPTARG#*=}"
+          case ${OPTARG} in
+            help)                      handle_help ;;
+            help=*)                    handle_illegal_option_arg "${OPTARG}" ;;
+            backup-conflict-file)      handle_backup_conflict_file ;;
+            backup-conflict-file=*)    handle_illegal_option_arg "${OPTARG}" ;;
+            backup-file-extension)     handle_backup_file_extension "${LONG_OPTARG}" ;;
+            backup-file-extension=*)   handle_missing_option_arg "${OPTARG}" ;;
+            merge-conflict-file)       handle_merge_conflict_file ;;
+            merge-conflict-file=*)     handle_illegal_option_arg "${OPTARG}" ;;
+            rename-pacnew-as-merged)   handle_rename_pacnew_as_merged ;;
+            rename-pacnew-as-merged=*) handle_illegal_option_arg "${OPTARG}" ;;
+            merged-file-extension)     handle_merged_file_extension "${LONG_OPTARG}" ;;
+            merged-file-extension=*)   handle_missing_option_arg "${OPTARG}" ;;
+            list-pacnew-files)         handle_list_pacnew_files ;;
+            list-pacnew-files=*)       handle_illegal_option_arg "${OPTARG}" ;;
+            '')                        break ;; # non-option arg starting with '-'
+            *)                         handle_unknown_option "${OPTARG}" ;;
+          esac ;;
+      \?) handle_unknown_option "${OPTARG}" ;;
+    esac
+  done
+}
+
+get_cmd_args() {
+  shift $((OPTIND - 1))
+  conflict_file_path="${1}"
+}
+
+handle_help() {
+  print_usage 0
+}
+
+handle_backup_conflict_file() {
+  if [ "${rename_pacnew_as_merged}" = 'true' ]; then
+    quit_err_msg_with_help "Mutually exclusive options selected" 1
+  fi
+  backup_conflict_file='true'
+}
+
+handle_backup_file_extension() {
+  backup_ext="${1}"
+}
+
+handle_merge_conflict_file() {
+  if [ "${rename_pacnew_as_merged}" = 'true' ]; then
+    quit_err_msg_with_help "Mutually exclusive options selected" 1
+  fi
+  merge_conflict_file='true'
+}
+
+handle_rename_pacnew_as_merged() {
+  if [ "${backup_conflict_file}" = 'true' ] || [ "${merge_conflict_file}" = 'true' ]; then
+    quit_err_msg_with_help "Mutually exclusive options selected" 1
+  fi
+  rename_pacnew_as_merged='true'
+}
+
+handle_merged_file_extension() {
+  merged_ext="${1}"
+}
+
+handle_list_pacnew_files() {
+  list_pacnew_files='true'
+}
+
+handle_unknown_option() {
+  err_msg="unknown option \"${1}\""
+  quit_err_msg_with_help "${err_msg}" 1
+}
+
+handle_illegal_option_arg() {
+  err_msg="illegal argument in \"${1}\""
+  quit_err_msg_with_help "${err_msg}" 1
+}
+
+handle_missing_option_arg() {
+  err_msg="missing argument for option \"${1}\""
+  quit_err_msg_with_help "${err_msg}" 1
+}
+
+print_err_msg() {
+  echo 'ERROR:'
+  printf "$(basename "${0}"): %s\\n\\n" "${1}"
+}
+
+quit_err_msg() {
+  print_err_msg "${1}"
+  exit "${2}"
+}
+
+quit_err_msg_with_help() {
+  print_err_msg "${1}"
+  print_usage "${2}"
+}
+
+check_args_and_opts() {
+  if [ "${conflict_file_path}" = '' ]; then
+    if [ "${backup_conflict_file}" = 'true' ] || \
+       [ "${merge_conflict_file}" = 'true' ] || \
+       [ "${rename_pacnew_as_merged}" = 'true' ]; then
+      quit_err_msg_with_help "missing <file_path> argument" 1
+    fi
+  fi
+}
+
+check_running_as_root() {
+  if [ "$(id -u)" != "0" ]; then
+    quit_err_msg_with_help "must run this script as root" 1
+  fi
+}
+
+do_backup_conflict_file() {
+  backup_copy_path="${conflict_file_path}${backup_ext}"
+  echo "Saving backup copy of '${conflict_file_path}' to '${backup_copy_path}'..."
+  cp "${conflict_file_path}" "${backup_copy_path}"
+  exit_code="${?}"
+  if [ "${exit_code}" != 0 ]; then
+    quit_err_msg "file path error while saving backup copy" 5
+  fi
+}
+
+do_merge_conflict_file() {
+  pacnew_file_path="${conflict_file_path}.pacnew"
+  echo "Editing '${conflict_file_path}' and merging in '${pacnew_file_path}'..."
+  if [ ! -f "${conflict_file_path}" ]; then
+    quit_err_msg "${conflict_file_path} does not exist" 5
+  fi
+  if [ ! -f "${pacnew_file_path}" ]; then
+    quit_err_msg "${pacnew_file_path} does not exist" 5
+  fi
+  vimdiff "${conflict_file_path}" "${pacnew_file_path}"
+  exit_code="${?}"
+  if [ "${exit_code}" != 0 ]; then
+    quit_err_msg "failure trying to use vimdiff executable" 10
+  fi
+}
+
+do_rename_pacnew_as_merged() {
+  pacnew_file_path="${conflict_file_path}.pacnew"
+  merged_file_path="${pacnew_file_path}${merged_ext}"
+  echo "Renaming '${pacnew_file_path}' to '${merged_file_path}'..."
+  if [ ! -f "${pacnew_file_path}" ]; then
+    quit_err_msg "${pacnew_file_path} does not exist" 5
+  fi
+  mv "${pacnew_file_path}" "${merged_file_path}"
+  exit_code="${?}"
+  if [ "${exit_code}" != 0 ]; then
+    quit_err_msg "file path error while renaming merged file" 5
+  fi
+}
+
+do_list_pacnew_files() {
+  echo "Searching for pacnew files with 'find'..."
+  eval "${pacnew_search_cmd}"
+  exit_code="${?}"
+  if [ "${exit_code}" = 0 ]; then
+    exit 0
+  else
+    quit_err_msg "failure searching for pacnew files" 10
+  fi
+}
+
+main() {
+  get_cmd_opts "$@"
+  get_cmd_args "$@"
+  check_args_and_opts "$@"
+  check_running_as_root "$@"
+  if [ "${list_pacnew_files}" = 'true' ]; then
+    do_list_pacnew_files "$@"
+  fi
+  if [ "${backup_conflict_file}" = 'true' ]; then
+    do_backup_conflict_file "$@"
+  fi
+  if [ "${merge_conflict_file}" = 'true' ]; then
+    do_merge_conflict_file "$@"
+  fi
+  if [ "${rename_pacnew_as_merged}" = 'true' ]; then
+    do_rename_pacnew_as_merged "$@"
+  fi
+  exit 0
+}
+
+main "$@"
+

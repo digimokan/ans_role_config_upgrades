@@ -1,13 +1,16 @@
-- name: "Install 'reflector' package"
+- name: "Install 'reflector' package, for mirrorlist update support"
   community.general.pacman:
     name: reflector
     state: present
   become: true
   become_user: root
 
-- name: "Install 'pacman-contrib' package"
+- name: "Install 'pacman-contrib' and 'gvim' packages, for package management"
   community.general.pacman:
-    name: pacman-contrib
+    # NOTE: install gvim, for vim copy/paste support
+    name:
+      - pacman-contrib
+      - gvim
     state: present
   become: true
   become_user: root
@@ -25,6 +28,7 @@
   loop:
     - 'do_mirrors_sysupgrade'
     - 'do_package_cleanup'
+    - 'do_pacnew_merge'
   loop_control:
     loop_var: script_name
 
