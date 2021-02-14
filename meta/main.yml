@@ -2,7 +2,7 @@ galaxy_info:
   author: digimokan
   description: "Update list of linux distro's repo servers"
   license: "MIT"
-  min_ansible_version: 2.5
+  min_ansible_version: 2.7
   platforms:
     - name: Archlinux
       versions:

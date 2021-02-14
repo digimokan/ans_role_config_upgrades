@@ -1,0 +1,16 @@
+# parameters for running 'reflector' command to produce a new mirrorlist.
+#   1. Restrict official mirrorlist to entries with these characteristics:
+#         * specified 'country'
+#         * specified 'protocol'
+#         * specified 'age' (repo was updated in last XX hours)
+#   2. Sort the new restricted list by each entries 'rate' characteristic.
+#   3. Take only the top 'score' entries in the sorted list, based on their
+#      score characteristic, to produce the final new mirrorlist.
+repo_update_params: >-
+  --verbose
+  --country 'United States'
+  --protocol 'https'
+  --age 6
+  --sort 'rate'
+  --score 10
+
