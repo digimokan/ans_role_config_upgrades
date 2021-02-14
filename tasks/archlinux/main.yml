@@ -12,7 +12,7 @@
   become: true
   become_user: root
 
-- name: "Create '/usr/local/bin/{{ script_name }}.sh' utility script"
+- name: "Create '/usr/local/bin/' utility scripts"
   ansible.builtin.template:
     dest: "/usr/local/bin/{{ script_name }}.sh"
     src: "{{ script_name }}.j2"
