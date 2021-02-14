@@ -20,8 +20,11 @@
     group: 'root'
     mode: '755'
     force: yes
-  vars:
-    script_name: 'do_mirrors_sysupgrade'
   become: true
   become_user: root
+  loop:
+    - 'do_mirrors_sysupgrade'
+    - 'do_package_cleanup'
+  loop_control:
+    loop_var: script_name
 

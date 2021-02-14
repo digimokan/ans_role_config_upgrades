@@ -1,0 +1,266 @@
+#!/bin/sh
+
+################################################################################
+# purpose:   cleanup old and unused system packages
+# args/opts: see usage (run with -h option)
+# meta:      script installed by ansible ans_role_config_pkg_repo_list_updates
+################################################################################
+
+# GLOBAL VARS:
+
+# User Selection Options
+uninstall_orphan_packages='false'
+delete_cache_packages='false'
+delete_uninstalled_packages='false'
+list_foreign_packages='false'
+dry_run='false'
+
+# Paths, Commands, And Defaults
+find_orphans_opt='-Qqdt'
+delete_orphans_cmd='pacman -Qqdt | pacman -Rsn -'
+find_uninstalled_opt='-dvuk0'
+delete_uninstalled_opt='-rvuk0'
+list_foreign_opt='-Qqem'
+num_to_keep='2'
+
+print_usage() {
+  echo 'USAGE:'
+  echo "  $(basename "${0}")        -h"
+  echo "  sudo  $(basename "${0}")  -o  [-n]"
+  echo "  sudo  $(basename "${0}")  -c  [-n]  [-k <num_to_keep>]"
+  echo "  sudo  $(basename "${0}")  -u  [-n]"
+  echo "  $(basename "${0}")        -f"
+  echo 'OPTIONS:'
+  echo '  -h, --help'
+  echo '      print this help message'
+  echo '  -o, --uninstall-orphan-packages'
+  echo '      uninstall all orphan pkgs (installed as deps, now not required)'
+  echo "  -c, --delete-cache-packages"
+  echo "      delete old pkgs from the cache"
+  echo "  -k <num_to_keep>, --keep-cache-packages=<num_to_keep>"
+  echo "      when deleting old pkgs, keep <num_to_keep> versions (default ${num_to_keep})"
+  echo '  -u, --delete-uninstalled-packages'
+  echo '      delete all uninstalled packages from the cache'
+  echo '  -f, --list-foreign-packages'
+  echo '      list all foreign pkgs (aur pkgs and pkgs not in official repos)'
+  echo '  -n, --dry-run'
+  echo '      do not delete or uninstall pkgs, only show what would be done'
+  echo 'EXIT CODES:'
+  echo '    0  ok'
+  echo '    1  usage, arguments, or options error'
+  echo '    5  package query error'
+  echo '   10  package uninstall or deletion error'
+  echo '  255  unknown error'
+  exit "${1}"
+}
+
+get_cmd_opts_and_args() {
+  while getopts ':hock:ufn-:' option; do
+    case "${option}" in
+      h)  handle_help ;;
+      o)  handle_uninstall_orphan_packages ;;
+      c)  handle_delete_cache_packages ;;
+      k)  handle_keep_cache_packages "${OPTARG}" ;;
+      u)  handle_delete_uninstalled_packages ;;
+      f)  handle_list_foreign_packages ;;
+      n)  handle_dry_run ;;
+      -)  LONG_OPTARG="${OPTARG#*=}"
+          case ${OPTARG} in
+            help)                          handle_help ;;
+            help=*)                        handle_illegal_option_arg "${OPTARG}" ;;
+            uninstall-orphan-packages)     handle_uninstall_orphan_packages ;;
+            uninstall-orphan-packages=*)   handle_illegal_option_arg "${OPTARG}" ;;
+            delete-cache-packages)         handle_delete_cache_packages "${OPTARG}" ;;
+            delete-cache-packages=*)       handle_delete_cache_packages "${OPTARG}" ;;
+            keep-cache-packages)           handle_keep_cache_packages "${LONG_OPTARG}" ;;
+            keep-cache-packages=*)         handle_missing_option_arg "${OPTARG}" ;;
+            delete-uninstalled-packages)   handle_delete_uninstalled_packages ;;
+            delete-uninstalled-packages=*) handle_illegal_option_arg "${OPTARG}" ;;
+            list-foreign-packages)         handle_list_foreign_packages ;;
+            list-foreign-packages=*)       handle_illegal_option_arg "${OPTARG}" ;;
+            dry-run)                       handle_dry_run ;;
+            dry-run=*)                     handle_illegal_option_arg "${OPTARG}" ;;
+            '')                            break ;; # non-option arg starting with '-'
+            *)                             handle_unknown_option "${OPTARG}" ;;
+          esac ;;
+      \?) handle_unknown_option "${OPTARG}" ;;
+    esac
+  done
+}
+
+handle_help() {
+  print_usage 0
+}
+
+handle_uninstall_orphan_packages() {
+  if [ "${delete_cache_packages}" = 'true' ] || \
+     [ "${delete_uninstalled_packages}" = 'true' ] || \
+     [ "${list_foreign_packages}" = 'true' ]; then
+    quit_err_msg_with_help "Mutually exclusive options selected" 1
+  fi
+  uninstall_orphan_packages='true'
+}
+
+handle_delete_cache_packages() {
+  if [ "${uninstall_orphan_packages}" = 'true' ] || \
+     [ "${delete_uninstalled_packages}" = 'true' ] || \
+     [ "${list_foreign_packages}" = 'true' ]; then
+    quit_err_msg_with_help "Mutually exclusive options selected" 1
+  fi
+  delete_cache_packages='true'
+}
+
+handle_keep_cache_packages() {
+  num_to_keep="${1}"
+}
+
+handle_delete_uninstalled_packages() {
+  if [ "${uninstall_orphan_packages}" = 'true' ] || \
+     [ "${delete_cache_packages}" = 'true' ] || \
+     [ "${list_foreign_packages}" = 'true' ]; then
+    quit_err_msg_with_help "Mutually exclusive options selected" 1
+  fi
+  delete_uninstalled_packages='true'
+}
+
+handle_list_foreign_packages() {
+  if [ "${uninstall_orphan_packages}" = 'true' ] || \
+     [ "${delete_cache_packages}" = 'true' ] || \
+     [ "${delete_uninstalled_packages}" = 'true' ]; then
+    quit_err_msg_with_help "Mutually exclusive options selected" 1
+  fi
+  list_foreign_packages='true'
+}
+
+handle_dry_run() {
+  dry_run='true'
+}
+
+handle_unknown_option() {
+  err_msg="unknown option \"${1}\""
+  quit_err_msg_with_help "${err_msg}" 1
+}
+
+handle_illegal_option_arg() {
+  err_msg="illegal argument in \"${1}\""
+  quit_err_msg_with_help "${err_msg}" 1
+}
+
+handle_missing_option_arg() {
+  err_msg="missing argument for option \"${1}\""
+  quit_err_msg_with_help "${err_msg}" 1
+}
+
+print_err_msg() {
+  echo 'ERROR:'
+  printf "$(basename "${0}"): %s\\n\\n" "${1}"
+}
+
+quit_err_msg() {
+  print_err_msg "${1}"
+  exit "${2}"
+}
+
+quit_err_msg_with_help() {
+  print_err_msg "${1}"
+  print_usage "${2}"
+}
+
+check_running_as_root() {
+  if [ "$(id -u)" != "0" ]; then
+    quit_err_msg_with_help "must run this script as root" 1
+  fi
+}
+
+do_uninstall_orphan_packages() {
+  echo "Searching for orphan packages with 'pacman ${find_orphans_opt}'..."
+  pkgs_found=$(pacman "${find_orphans_opt}")
+  if [ "${pkgs_found}" = '' ]; then
+    echo "No orphan packages were found."
+  else
+    echo "Found orphan packages:"
+    echo "${pkgs_found}"
+  fi
+  if [ "${dry_run}" = 'false' ] && [ "${pkgs_found}" != '' ]; then
+    echo "Uninstalling orphan packages with '${delete_orphans_cmd}'..."
+    eval "$delete_orphans_cmd"
+    exit_code="${?}"
+    if [ "${exit_code}" != 0 ]; then
+      quit_err_msg "orphan package uninstall failure" 10
+    fi
+  fi
+}
+
+do_delete_cache_packages() {
+  echo "Searching for cache packages with 'paccache -k${num_to_keep} -dv'..."
+  pkgs_found=$(paccache "-k${num_to_keep}" "-dv")
+  if [ "${pkgs_found}" = '' ]; then
+    echo "No cache packages were found."
+  else
+    echo "${pkgs_found}"
+  fi
+  if [ "${dry_run}" = 'false' ] && [ "${pkgs_found}" != '' ]; then
+    delete_cache_cmd="paccache -k${num_to_keep} -r"
+    echo "Deleting cache packages with '${delete_cache_cmd}'..."
+    eval "$delete_cache_cmd"
+    exit_code="${?}"
+    if [ "${exit_code}" != 0 ]; then
+      quit_err_msg "delete cache package failure" 10
+    fi
+  fi
+}
+
+do_delete_uninstalled_packages() {
+  echo "Searching for uninstalled packages in cache with 'paccache ${find_uninstalled_opt}'..."
+  pkgs_found=$(paccache ${find_uninstalled_opt})
+  if [ "${pkgs_found}" = '' ]; then
+    echo "No uninstalled packages in cache were found."
+  else
+    echo "${pkgs_found}"
+  fi
+  if [ "${dry_run}" = 'false' ] && [ "${pkgs_found}" != '' ]; then
+    delete_uninstalled_cmd="paccache ${delete_uninstalled_opt}"
+    echo "Deleting cache packages with '${delete_uninstalled_cmd}'..."
+    eval "$delete_uninstalled_cmd"
+    exit_code="${?}"
+    if [ "${exit_code}" != 0 ]; then
+      quit_err_msg "delete uninstalled-packages from cache failure" 10
+    fi
+  fi
+}
+
+do_list_foreign_packages() {
+  echo "Searching for foreign system packages with 'pacman ${list_foreign_opt}'..."
+  pkgs_found=$(pacman ${list_foreign_opt})
+  if [ "${pkgs_found}" = '' ]; then
+    echo "No foreign packages were found."
+  else
+    echo "Found foreign packages:"
+    echo "${pkgs_found}"
+  fi
+  exit 0
+}
+
+main() {
+  get_cmd_opts_and_args "$@"
+  if [ "${list_foreign_packages}" = 'true' ]; then
+    do_list_foreign_packages "$@"
+  fi
+  check_running_as_root "$@"
+  if [ "${uninstall_orphan_packages}" = 'true' ]; then
+    do_uninstall_orphan_packages "$@"
+  fi
+  if [ "${delete_cache_packages}" = 'true' ]; then
+    do_delete_cache_packages "$@"
+  fi
+  if [ "${delete_uninstalled_packages}" = 'true' ]; then
+    do_delete_uninstalled_packages "$@"
+  fi
+  if [ "${list_foreign_packages}" = 'true' ]; then
+    do_list_foreign_packages "$@"
+  fi
+  exit 0
+}
+
+main "$@"
+
