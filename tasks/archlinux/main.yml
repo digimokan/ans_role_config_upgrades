@@ -1,20 +1,3 @@
-- name: "Install 'reflector' package, for mirrorlist update support"
-  community.general.pacman:
-    name: reflector
-    state: present
-  become: true
-  become_user: root
-
-- name: "Install 'pacman-contrib' and 'gvim' packages, for package management"
-  community.general.pacman:
-    # NOTE: install gvim, for vim copy/paste support
-    name:
-      - pacman-contrib
-      - gvim
-    state: present
-  become: true
-  become_user: root
-
 - name: "Create '/usr/local/bin/' utility scripts"
   ansible.builtin.template:
     dest: "/usr/local/bin/{{ script_name }}.sh"
@@ -31,4 +14,21 @@
     - 'do_pacnew_merge'
   loop_control:
     loop_var: script_name
+
+- name: "Install 'reflector' package, for mirrorlist update support"
+  community.general.pacman:
+    name: reflector
+    state: present
+  become: true
+  become_user: root
+
+- name: "Install 'pacman-contrib' and 'gvim' packages, for package management"
+  community.general.pacman:
+    # NOTE: install gvim, for vim copy/paste support
+    name:
+      - pacman-contrib
+      - gvim
+    state: present
+  become: true
+  become_user: root
 
