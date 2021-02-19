@@ -44,7 +44,7 @@ print_usage() {
   echo '  -m, --merge-conflict-file'
   echo '      edit <file_path> and merge in updates from <file_path>.pacnew'
   echo '  -r, --rename-pacnew-as-merged'
-  echo "      after merge, rename <file_path>.pacnew as <file_path>.pacnew.${merged_ext}"
+  echo "      after merge, rename <file_path>.pacnew as <file_path>.pacnew${merged_ext}"
   echo '  -t <merged_ext>, --merged-file-extension=<merged_ext>'
   echo "      specify the merged-file extension (default '${merged_ext}')"
   echo '  -l, --list-pacnew-files'
@@ -170,6 +170,11 @@ check_args_and_opts() {
        [ "${merge_conflict_file}" = 'true' ] || \
        [ "${rename_pacnew_as_merged}" = 'true' ]; then
       quit_err_msg_with_help "missing <file_path> argument" 1
+    fi
+  else
+    conflict_file_ext="${conflict_file_path##*.}"
+    if [ "${conflict_file_ext}" = 'pacnew' ]; then
+      quit_err_msg_with_help "Don't specify '<file_path>.pacnew'. Just specify '<file_path>'." 1
     fi
   fi
 }
