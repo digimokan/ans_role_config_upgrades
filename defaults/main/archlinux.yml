@@ -12,5 +12,5 @@ repo_update_params: >-
   --protocol 'https'
   --age 6
   --sort 'rate'
-  --score 10
+  --score 20
 
