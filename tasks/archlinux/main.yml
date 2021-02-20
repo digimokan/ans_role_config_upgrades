@@ -22,12 +22,11 @@
   become: true
   become_user: root
 
-- name: "Install 'pacman-contrib' and 'gvim' packages, for package management"
+- name: "Install 'pacman-contrib' and 'vim' packages, for package management"
   community.general.pacman:
-    # NOTE: install gvim, for vim copy/paste support
     name:
       - pacman-contrib
-      - gvim
+      - vim
     state: present
   become: true
   become_user: root
