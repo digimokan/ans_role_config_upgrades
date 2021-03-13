@@ -31,15 +31,15 @@
 
 - name: "Check if basic terminal 'vim' package is installed"
   ansible.builtin.command: pacman -Qi vim
-  register: result
-  changed_when: result.rc == 1
-  failed_when: result.rc > 1
-  notify: install-term-vim
+  register: vim_result
+  changed_when: false
+  failed_when: vim_result.rc > 1
 
 - name: "Check if GUI 'gvim' package (with clipboard support) is installed"
   ansible.builtin.command: pacman -Qi gvim
-  register: result
-  changed_when: result.rc == 1
-  failed_when: result.rc > 1
+  register: gvim_result
+  changed_when: gvim_result.rc == 1
+  failed_when: gvim_result.rc > 1
   notify: install-term-vim
+  when: vim_result.rc == 1
 
