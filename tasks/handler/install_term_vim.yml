@@ -1,0 +1,7 @@
+- name: "Install basic terminal 'vim' package, since no vim variant installed"
+  community.general.pacman:
+    name: vim
+    state: present
+  become: true
+  become_user: root
+

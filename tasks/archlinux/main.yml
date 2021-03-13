@@ -22,12 +22,24 @@
   become: true
   become_user: root
 
-- name: "Install 'pacman-contrib' and 'vim' packages, for package management"
+- name: "Install 'pacman-contrib' package, for paccache utility"
   community.general.pacman:
-    name:
-      - pacman-contrib
-      - vim
+    name: pacman-contrib
     state: present
   become: true
   become_user: root
+
+- name: "Check if basic terminal 'vim' package is installed"
+  ansible.builtin.command: pacman -Qi vim
+  register: result
+  changed_when: result.rc == 1
+  failed_when: result.rc > 1
+  notify_receiver: install-term-vim
+
+- name: "Check if GUI 'gvim' package (with clipboard support) is installed"
+  ansible.builtin.command: pacman -Qi gvim
+  register: result
+  changed_when: result.rc == 1
+  failed_when: result.rc > 1
+  notify_receiver: install-term-vim
 

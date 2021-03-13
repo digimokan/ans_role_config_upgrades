@@ -1,0 +1,3 @@
+- ansible.builtin.include_tasks: handler/install_term_vim.yml
+  listen: install-term-vim
+
