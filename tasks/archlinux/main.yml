@@ -34,12 +34,12 @@
   register: result
   changed_when: result.rc == 1
   failed_when: result.rc > 1
-  notify_receiver: install-term-vim
+  notify: install-term-vim
 
 - name: "Check if GUI 'gvim' package (with clipboard support) is installed"
   ansible.builtin.command: pacman -Qi gvim
   register: result
   changed_when: result.rc == 1
   failed_when: result.rc > 1
-  notify_receiver: install-term-vim
+  notify: install-term-vim
 
