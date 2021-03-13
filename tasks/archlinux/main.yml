@@ -29,17 +29,11 @@
   become: true
   become_user: root
 
-- name: "Check if basic terminal 'vim' package is installed"
+- name: "Check if basic terminal 'vim' or GUI 'gvim' package is installed"
+  # Note: the pacman query for 'vim' returns info for either vim/gvim package
   ansible.builtin.command: pacman -Qi vim
-  register: vim_result
-  changed_when: false
-  failed_when: vim_result.rc > 1
-
-- name: "Check if GUI 'gvim' package (with clipboard support) is installed"
-  ansible.builtin.command: pacman -Qi gvim
-  register: gvim_result
-  changed_when: gvim_result.rc == 1
-  failed_when: gvim_result.rc > 1
+  register: result
+  changed_when: result.rc == 1
+  failed_when: result.rc > 1
   notify: install-term-vim
-  when: vim_result.rc == 1
 
