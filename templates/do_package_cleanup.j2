@@ -54,7 +54,7 @@ print_usage() {
   exit "${1}"
 }
 
-get_cmd_opts_and_args() {
+get_cmd_opts() {
   while getopts ':hock:ufn-:' option; do
     case "${option}" in
       h)  handle_help ;;
@@ -234,7 +234,7 @@ do_list_foreign_packages() {
 }
 
 main() {
-  get_cmd_opts_and_args "$@"
+  get_cmd_opts "$@"
   if [ "${list_foreign_packages}" = 'true' ]; then
     do_list_foreign_packages "$@"
   fi
