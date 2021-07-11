@@ -74,14 +74,14 @@ get_cmd_opts() {
             help=*)                    handle_illegal_option_arg "${OPTARG}" ;;
             backup-conflict-file)      handle_backup_conflict_file ;;
             backup-conflict-file=*)    handle_illegal_option_arg "${OPTARG}" ;;
-            backup-file-extension)     handle_backup_file_extension "${LONG_OPTARG}" ;;
-            backup-file-extension=*)   handle_missing_option_arg "${OPTARG}" ;;
+            backup-file-extension=?*)  handle_backup_file_extension "${LONG_OPTARG}" ;;
+            backup-file-extension*)    handle_missing_option_arg "${OPTARG}" ;;
             merge-conflict-file)       handle_merge_conflict_file ;;
             merge-conflict-file=*)     handle_illegal_option_arg "${OPTARG}" ;;
             rename-pacnew-as-merged)   handle_rename_pacnew_as_merged ;;
             rename-pacnew-as-merged=*) handle_illegal_option_arg "${OPTARG}" ;;
-            merged-file-extension)     handle_merged_file_extension "${LONG_OPTARG}" ;;
-            merged-file-extension=*)   handle_missing_option_arg "${OPTARG}" ;;
+            merged-file-extension=?*)  handle_merged_file_extension "${LONG_OPTARG}" ;;
+            merged-file-extension*)    handle_missing_option_arg "${OPTARG}" ;;
             list-pacnew-files)         handle_list_pacnew_files ;;
             list-pacnew-files=*)       handle_illegal_option_arg "${OPTARG}" ;;
             '')                        break ;; # non-option arg starting with '-'
