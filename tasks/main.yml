@@ -1,7 +1,6 @@
-- name: "Configure 'mirrorlist' file updates, for Arch Linux"
-  ansible.builtin.include_tasks: archlinux/main.yml
-  when: ansible_os_family == "Archlinux"
+- name: "Create utility scripts"
+  ansible.builtin.include_tasks: create_util_scripts/main.yml
 
-- name: "Run all notified role-handlers now"
-  meta: flush_handlers
+- name: "Install support_packages"
+  ansible.builtin.include_tasks: install_support_packages/main.yml
 

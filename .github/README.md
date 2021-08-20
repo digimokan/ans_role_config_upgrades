@@ -1,8 +1,8 @@
-# ans_role_config_package_upgrades
+# ans_role_config_upgrades
 
-Ansible role to configure system package management.
+Ansible role to configure system and package upgrades.
 
-[![Release](https://img.shields.io/github/release/digimokan/ans_role_config_package_upgrades.svg?label=release)](https://github.com/digimokan/ans_role_config_package_upgrades/releases/latest "Latest Release Notes")
+[![Release](https://img.shields.io/github/release/digimokan/ans_role_config_upgrades.svg?label=release)](https://github.com/digimokan/ans_role_config_upgrades/releases/latest "Latest Release Notes")
 [![License](https://img.shields.io/badge/license-MIT-blue.svg?label=license)](LICENSE.md "Project License")
 
 ## Table Of Contents
@@ -16,15 +16,15 @@ Ansible role to configure system package management.
 
 ## Purpose
 
-* Configure how the system performs updates, upgrades, and package management.
-* Do the package-repo-server-list update, via include_task:
-    * Use optional age criteria to determine when to update list.
-    * Make a backup copy of the original list.
-* Arch Linux: install system [utility scripts](../templates/).
+* Configure system upgrades.
+* Configure package upgrades.
+* Configure OS package repositories, and related updates.
+* Install system and package upgrade [utility scripts](../templates/).
 
 ## Supported Operating Systems
 
-* Arch Linux (updates `mirrorlist` file)
+* Arch Linux
+* FreeBSD
 
 ## Quick Start
 
@@ -34,7 +34,7 @@ Ansible role to configure system package management.
 
    ```yaml
    # requirements.yml
-   - src: https://github.com/digimokan/ans_role_config_package_upgrades
+   - src: https://github.com/digimokan/ans_role_config_upgrades
    ```
 
 2. From the project root directory, install/download the role:
@@ -45,25 +45,23 @@ Ansible role to configure system package management.
 
    * _NOTE:_ `--force-with-deps` _ensures subsequent calls download updates_
 
-3. Include the main role, to setup the package-repo-list-update configuration:
+3. Include the main role, to configure system and package upgrades:
 
    ```yaml
-   - name: "Set up OS package-repo-list-update configuration"
+   - name: "Configure system and package upgrades"
      ansible.builtin.include_role:
-       name: ans_role_config_package_upgrades
+       name: ans_role_config_upgrades
    ```
 
-4. Use role "utility task" (from the `inc` directory) to do the
-   package-repo-list update:
+4. Use role "utility task" (from the `inc` directory) to update OS package
+   repositories:
 
    ```yaml
-   - name: "Update the OS package-repo list"
+   - name: "Update OS package repositories"
      ansible.builtin.include_role:
-       name: ans_role_config_package_upgrades
+       name: ans_role_config_upgrades
        tasks_from: inc/update_pkg_repo_list.yml
      vars:
-       pkg_repo_list_file_path: "/etc/pacman.d/mirrorlist"
-       pkg_repo_list_bkup_filename: "mirrorlist_bkup"
        pkg_repo_list_age_cutoff: "1d"
    ```
 
@@ -73,7 +71,7 @@ Ansible role to configure system package management.
 
    ```yaml
    dependencies:
-     - src: https://github.com/digimokan/ans_role_config_package_upgrades
+     - src: https://github.com/digimokan/ans_role_config_upgrades
        tags:
          - never
    ```
@@ -85,16 +83,12 @@ Ansible role to configure system package management.
 
 See the role `defaults` file for main role vars listing:
 
-  * [defaults/main.yml](../defaults/main.yml)
-
-See the `update_pkg_repo_list` task vars listing:
-
-  * [inc/update_pkg_repo_list.yml](../tasks/inc/update_pkg_repo_list.yml)
+  * [defaults](../defaults/main/)
 
 ## Contributing
 
 * Feel free to report a bug or propose a feature by opening a new
-  [Issue](https://github.com/digimokan/ans_role_config_package_upgrades/issues).
+  [Issue](https://github.com/digimokan/ans_role_config_upgrades/issues).
 * Follow the project's [Contributing](CONTRIBUTING.md) guidelines.
 * Respect the project's [Code Of Conduct](CODE_OF_CONDUCT.md).
 

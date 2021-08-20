@@ -3,7 +3,7 @@
 #         * specified 'country'
 #         * specified 'protocol'
 #         * specified 'age' (repo was updated in last XX hours)
-#   2. Sort the new restricted list by each entries 'rate' characteristic.
+#   2. Sort the new restricted list by each entry's 'rate' characteristic.
 #   3. Take only the top 'score' entries in the sorted list, based on their
 #      score characteristic, to produce the final new mirrorlist.
 repo_update_params: >-
@@ -13,4 +13,15 @@ repo_update_params: >-
   --age 6
   --sort 'rate'
   --score 20
+
+# file path to list of OS package repositories
+pkg_repo_list_file_path: "/etc/pacman.d/mirrorlist"
+
+# name of backup file to create when updating pkg_repo_list_file_path
+pkg_repo_list_bkup_filename: "mirrorlist_bkup"
+
+# update the repo-server-list if it is older than this criteria
+# note: use format 1m (minutes), 1h (hours), 1d (days)
+# note: use "1s" to effectively ignore age criteria, and force update
+pkg_repo_list_age_cutoff: "1d"
 
