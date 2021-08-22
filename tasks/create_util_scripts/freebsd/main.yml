@@ -3,7 +3,7 @@
     dest: "/usr/local/bin/{{ script_name }}.sh"
     src: "freebsd/{{ script_name }}.j2"
     owner: 'root'
-    group: 'root'
+    group: 'wheel'
     mode: '755'
     force: yes
   become: true
