@@ -1,0 +1,261 @@
+#!/bin/sh
+# vim: set filetype=sh:
+
+################################################################################
+# purpose:   update FreeBSD packages and base system to new boot environments
+# args/opts: see usage (run with -h option)
+# meta:      script installed by ansible {{ role_name | basename }}
+# refs:      https://klarasystems.com/articles/managing-boot-environments/
+################################################################################
+
+# GLOBAL VARS:
+
+# User Selection Options
+upgrade_packages='false'
+upgrade_system_patches='false'
+upgrade_system_to_release='false'
+dry_run='false'
+
+# upgrade boot environment base name
+boot_env_basename='upgrade_'$(date +%Y_%m_%d_%H%M)
+
+print_usage() {
+  echo 'USAGE:'
+  echo "  $(basename "${0}")        -h"
+  echo "  sudo  $(basename "${0}")  -p  [-n]"
+  echo "  sudo  $(basename "${0}")  -t"
+  echo "  sudo  $(basename "${0}")  -r <release_vers>"
+  echo 'OPTIONS:'
+  echo '  -h, --help'
+  echo '      print this help message'
+  echo '  -p, --upgrade-packages'
+  echo '      upgrade all installed packages'
+  echo "  -t, --upgrade-system-patches"
+  echo "      upgrade base system with patches"
+  echo "  -r <release_vers>, --upgrade-system-to-release=<release_vers>"
+  echo "      upgrade base system to new release (release_vers 14.0, 15.1, etc)"
+  echo '  -n, --dry-run'
+  echo '      do not take any action, only show what would be done'
+  echo 'EXIT CODES:'
+  echo '    0  ok'
+  echo '    1  usage, arguments, or options error'
+  echo '    5  boot environment error'
+  echo '   10  update/upgrade error'
+  echo '  255  unknown error'
+  exit "${1}"
+}
+
+get_cmd_opts() {
+  while getopts ':hptr:n-:' option; do
+    case "${option}" in
+      h)  handle_help ;;
+      p)  handle_upgrade_packages ;;
+      t)  handle_upgrade_system_patches ;;
+      r)  handle_upgrade_system_to_release "${OPTARG}" ;;
+      n)  handle_dry_run ;;
+      -)  LONG_OPTARG="${OPTARG#*=}"
+          case ${OPTARG} in
+            help)                          handle_help ;;
+            help=*)                        handle_illegal_option_arg "${OPTARG}" ;;
+            upgrade-packages)              handle_upgrade_packages ;;
+            upgrade-packages=*)            handle_illegal_option_arg "${OPTARG}" ;;
+            upgrade-system-patches)        handle_upgrade_system_patches "${OPTARG}" ;;
+            upgrade-system-patches=*)      handle_illegal_option_arg "${OPTARG}" ;;
+            upgrade-system-to-release=?*)  handle_upgrade_system_to_release "${LONG_OPTARG}" ;;
+            upgrade-system-to-release*)    handle_missing_option_arg "${OPTARG}" ;;
+            dry-run)                       handle_dry_run ;;
+            dry-run=*)                     handle_illegal_option_arg "${OPTARG}" ;;
+            '')                            break ;; # non-option arg starting with '-'
+            *)                             handle_unknown_option "${OPTARG}" ;;
+          esac ;;
+      \?) handle_unknown_option "${OPTARG}" ;;
+    esac
+  done
+}
+
+handle_help() {
+  print_usage 0
+}
+
+handle_upgrade_packages() {
+  if [ "${upgrade_system_patches}" = 'true' ] || \
+     [ "${upgrade_system_to_release}" = 'true' ]; then
+    quit_err_msg_with_help "Mutually exclusive options selected" 1
+  fi
+  upgrade_packages='true'
+}
+
+handle_upgrade_system_patches() {
+  if [ "${upgrade_packages}" = 'true' ] || \
+     [ "${upgrade_system_to_release}" = 'true' ]; then
+    quit_err_msg_with_help "Mutually exclusive options selected" 1
+  fi
+  upgrade_system_patches='true'
+}
+
+handle_upgrade_system_to_release() {
+  if [ "${upgrade_packages}" = 'true' ] || \
+     [ "${upgrade_system_patches}" = 'true' ]; then
+    quit_err_msg_with_help "Mutually exclusive options selected" 1
+  fi
+  upgrade_system_to_release='true'
+  release_vers="${1}"
+}
+
+handle_dry_run() {
+  dry_run='true'
+}
+
+handle_unknown_option() {
+  err_msg="unknown option \"${1}\""
+  quit_err_msg_with_help "${err_msg}" 1
+}
+
+handle_illegal_option_arg() {
+  err_msg="illegal argument in \"${1}\""
+  quit_err_msg_with_help "${err_msg}" 1
+}
+
+handle_missing_option_arg() {
+  err_msg="missing argument for option \"${1}\""
+  quit_err_msg_with_help "${err_msg}" 1
+}
+
+print_err_msg() {
+  echo 'ERROR:'
+  printf "$(basename "${0}"): %s\\n\\n" "${1}"
+}
+
+quit_err_msg() {
+  print_err_msg "${1}"
+  exit "${2}"
+}
+
+quit_err_msg_with_help() {
+  print_err_msg "${1}"
+  print_usage "${2}"
+}
+
+check_running_as_root() {
+  if [ "$(id -u)" != "0" ]; then
+    quit_err_msg_with_help "must run this script as root" 1
+  fi
+}
+
+quit_err_msg_if_rc_not_0() {
+  cmd_exit_code="${1}"
+  err_msg="${2}"
+  script_exit_code="${3}"
+  if [ "${cmd_exit_code}" != 0 ]; then
+    quit_err_msg "${err_msg}" "${script_exit_code}"
+  fi
+}
+
+mount_boot_env() {
+  boot_env_fullname="${1}"
+
+  # create the boot environment
+  bectl create "${boot_env_fullname}"
+  quit_err_msg_if_rc_not_0 "${?}" "boot environment creation failure" 5
+
+  # mount the boot environment, save boot_env_mountpoint for caller
+  echo "mounting new boot environment '${boot_env_fullname}'..."
+  mount_info=$(bectl mount "${boot_env_fullname}")
+  quit_err_msg_if_rc_not_0 "${?}" "boot environment mount failure" 5
+  boot_env_mountpoint=$(echo "${mount_info}" | awk '{print $NF}')
+}
+
+do_upgrade_packages() {
+  # if doing a dry-run, do dry-run, and exit
+  if [ "${dry_run}" = 'true' ]; then
+    echo "Doing dry-run upgrade of all packages with 'pkg upgrade --dry-run'..."
+    pkg upgrade --dry-run
+    exit 0
+  fi
+
+  # check if any updates available - if not, exit
+  pkg_check_stdout=$(pkg upgrade --dry-run --quiet)
+  if [ "${pkg_check_stdout}" = '' ]; then
+    echo "All packages are up to date. Nothing to do."
+    exit 0
+  fi
+
+  # updates ARE available, so create a new boot environment for them
+  mount_boot_env "${boot_env_basename}_packages"
+
+  # update local package repo database in the new BE
+  echo "Updating local package repo with 'pkg -r ${boot_env_mountpoint} update -f'..."
+  pkg -r "${boot_env_mountpoint}" update -f
+  quit_err_msg_if_rc_not_0 "${?}" "local package repo update failure" 10
+
+  # upgrade all packages into the new BE
+  echo "Upgrading all packages with 'pkg -r ${boot_env_mountpoint} upgrade'..."
+  pkg -r "${boot_env_mountpoint}" upgrade
+  quit_err_msg_if_rc_not_0 "${?}" "package upgrade operation failure" 10
+  echo "Package upgrades complete. Boot into ${boot_env_fullname} to test."
+}
+
+do_upgrade_system_patches() {
+  # attempt initial base-system-patch fetch, just to check if patches available
+  freebsd-update fetch
+  freebsd-update updatesready
+  exit_code="${?}"
+  if [ "${exit_code}" = 2 ]; then
+    echo "Base system is up to date. No patches to apply."
+    exit 0
+  fi
+
+  # base-system patches ARE available, so create a new boot environment for them
+  mount_boot_env "${boot_env_basename}_syspatches"
+
+  # delete base-system-db in current BE, so that it won't be used
+  rm -Rf /var/db/freebsd-update
+
+  # fetch the available base-system patches into the new BE
+  echo "Fetching base system patches with 'freebsd-update -b ${boot_env_mountpoint} -d ${boot_env_mountpoint}/var/db/freebsd-update fetch'..."
+  freebsd-update -b "${boot_env_mountpoint}" -d "${boot_env_mountpoint}/var/db/freebsd-update" fetch
+  quit_err_msg_if_rc_not_0 "${?}" "base-system-patch fetch failure" 10
+
+  # install the fetched base-system patches into the new BE
+  echo "Installing base system patches with 'freebsd-update -b ${boot_env_mountpoint} -d ${boot_env_mountpoint}/var/db/freebsd-update install'..."
+  freebsd-update -b "${boot_env_mountpoint}" -d "${boot_env_mountpoint}/var/db/freebsd-update" install
+  quit_err_msg_if_rc_not_0 "${?}" "base-system-patch install failure" 10
+  current_vers=$(freebsd-version -u)
+  echo "Base system patches to ${current_vers} complete. Boot into ${boot_env_fullname}, and check 'freebsd-version -u'."
+}
+
+do_upgrade_system_to_release() {
+  mount_boot_env "${boot_env_basename}_release"
+
+  # delete base-system-db in current BE, so that it won't be used
+  rm -Rf /var/db/freebsd-update
+
+  # fetch and merge-compare the new release into the new BE
+  echo "Fetching and merge-comparing new release with 'freebsd-update -b ${boot_env_mountpoint} -d ${boot_env_mountpoint}/var/db/freebsd-update -r ${release_vers}-RELEASE upgrade'..."
+  freebsd-update -b "${boot_env_mountpoint}" -d "${boot_env_mountpoint}/var/db/freebsd-update" -r "${release_vers}-RELEASE" upgrade
+  quit_err_msg_if_rc_not_0 "${?}" "release fetch/merge-compare failure" 10
+
+  # install the new release into the new BE
+  echo "Installing new release with 'freebsd-update -b ${boot_env_mountpoint} -d ${boot_env_mountpoint}/var/db/freebsd-update -r ${release_vers}-RELEASE install'..."
+  freebsd-update -b "${boot_env_mountpoint}" -d "${boot_env_mountpoint}/var/db/freebsd-update" -r "${release_vers}-RELEASE" install
+  quit_err_msg_if_rc_not_0 "${?}" "release install failure" 10
+  echo "Release install complete. Boot into ${boot_env_fullname}, and run 'freebsd-update install' again."
+}
+
+main() {
+  check_running_as_root "$@"
+  if [ "${upgrade_packages}" = 'true' ]; then
+    do_upgrade_packages "$@"
+  elif [ "${upgrade_system_patches}" = 'true' ]; then
+    do_upgrade_system_patches "$@"
+  elif [ "${upgrade_system_to_release}" = 'true' ]; then
+    do_upgrade_system_to_release "$@"
+  else
+    quit_err_msg_with_help "no valid option selected" 1
+  fi
+
+  exit 0
+}
+
+main "$@"
+
