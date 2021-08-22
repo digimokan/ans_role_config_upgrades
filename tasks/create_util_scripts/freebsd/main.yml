@@ -18,7 +18,7 @@
     path: "{{ pkg_conf_file_path }}"
     insertafter: >-
       ^ALIAS(.*)\{$
-      line: '  details = search -e -Q name -Q version -Q www -Q licenses -Q maintainer -Q depends-on -Q required-by'
+    line: '  details = search -e -Q name -Q version -Q www -Q licenses -Q maintainer -Q depends-on -Q required-by'
     state: present
   become: true
   become_user: root
