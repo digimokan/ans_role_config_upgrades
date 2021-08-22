@@ -59,7 +59,7 @@ get_cmd_opts() {
             help=*)                        handle_illegal_option_arg "${OPTARG}" ;;
             upgrade-packages)              handle_upgrade_packages ;;
             upgrade-packages=*)            handle_illegal_option_arg "${OPTARG}" ;;
-            upgrade-system-patches)        handle_upgrade_system_patches "${OPTARG}" ;;
+            upgrade-system-patches)        handle_upgrade_system_patches ;;
             upgrade-system-patches=*)      handle_illegal_option_arg "${OPTARG}" ;;
             upgrade-system-to-release=?*)  handle_upgrade_system_to_release "${LONG_OPTARG}" ;;
             upgrade-system-to-release*)    handle_missing_option_arg "${OPTARG}" ;;
