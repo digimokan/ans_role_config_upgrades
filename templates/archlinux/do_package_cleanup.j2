@@ -71,7 +71,7 @@ get_cmd_opts() {
             uninstall-orphan-packages)     handle_uninstall_orphan_packages ;;
             uninstall-orphan-packages=*)   handle_illegal_option_arg "${OPTARG}" ;;
             delete-cache-packages)         handle_delete_cache_packages "${OPTARG}" ;;
-            delete-cache-packages=*)       handle_delete_cache_packages "${OPTARG}" ;;
+            delete-cache-packages=*)       handle_illegal_option_arg "${OPTARG}" ;;
             keep-cache-packages=?*)        handle_keep_cache_packages "${LONG_OPTARG}" ;;
             keep-cache-packages*)          handle_missing_option_arg "${OPTARG}" ;;
             delete-uninstalled-packages)   handle_delete_uninstalled_packages ;;
