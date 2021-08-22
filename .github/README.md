@@ -19,7 +19,7 @@ Ansible role to configure system and package upgrades.
 * Configure system upgrades.
 * Configure package upgrades.
 * Configure OS package repositories, and related updates.
-* Install system and package upgrade [utility scripts](../templates/).
+* Install system and package management [utility scripts](../templates/).
 
 ## Supported Operating Systems
 
