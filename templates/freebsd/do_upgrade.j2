@@ -142,11 +142,13 @@ check_running_as_root() {
   fi
 }
 
-quit_err_msg_if_rc_not_0() {
+quit_rem_be_if_rc_not_0() {
   cmd_exit_code="${1}"
   err_msg="${2}"
   script_exit_code="${3}"
   if [ "${cmd_exit_code}" != 0 ]; then
+    bectl unmount "${boot_env_fullname}" > /dev/null 2>&1
+    bectl destroy "${boot_env_fullname}" > /dev/null 2>&1
     quit_err_msg "${err_msg}" "${script_exit_code}"
   fi
 }
@@ -156,12 +158,12 @@ mount_boot_env() {
 
   # create the boot environment
   bectl create "${boot_env_fullname}"
-  quit_err_msg_if_rc_not_0 "${?}" "boot environment creation failure" 5
+  quit_rem_be_if_rc_not_0 "${?}" "boot environment creation failure" 5
 
   # mount the boot environment, save boot_env_mountpoint for caller
   echo "mounting new boot environment '${boot_env_fullname}'..."
   mount_info=$(bectl mount "${boot_env_fullname}")
-  quit_err_msg_if_rc_not_0 "${?}" "boot environment mount failure" 5
+  quit_rem_be_if_rc_not_0 "${?}" "boot environment mount failure" 5
   boot_env_mountpoint=$(echo "${mount_info}" | awk '{print $NF}')
 }
 
@@ -186,12 +188,12 @@ do_upgrade_packages() {
   # update local package repo database in the new BE
   echo "Updating local package repo with 'pkg -r ${boot_env_mountpoint} update -f'..."
   pkg -r "${boot_env_mountpoint}" update -f
-  quit_err_msg_if_rc_not_0 "${?}" "local package repo update failure" 10
+  quit_rem_be_if_rc_not_0 "${?}" "local package repo update failure" 10
 
   # upgrade all packages into the new BE
   echo "Upgrading all packages with 'pkg -r ${boot_env_mountpoint} upgrade'..."
   pkg -r "${boot_env_mountpoint}" upgrade
-  quit_err_msg_if_rc_not_0 "${?}" "package upgrade operation failure" 10
+  quit_rem_be_if_rc_not_0 "${?}" "package upgrade operation failure" 10
   echo "Package upgrades complete. Boot into ${boot_env_fullname} to test."
 }
 
@@ -214,12 +216,12 @@ do_upgrade_system_patches() {
   # fetch the available base-system patches into the new BE
   echo "Fetching base system patches with 'freebsd-update -b ${boot_env_mountpoint} -d ${boot_env_mountpoint}/var/db/freebsd-update fetch'..."
   freebsd-update -b "${boot_env_mountpoint}" -d "${boot_env_mountpoint}/var/db/freebsd-update" fetch
-  quit_err_msg_if_rc_not_0 "${?}" "base-system-patch fetch failure" 10
+  quit_rem_be_if_rc_not_0 "${?}" "base-system-patch fetch failure" 10
 
   # install the fetched base-system patches into the new BE
   echo "Installing base system patches with 'freebsd-update -b ${boot_env_mountpoint} -d ${boot_env_mountpoint}/var/db/freebsd-update install'..."
   freebsd-update -b "${boot_env_mountpoint}" -d "${boot_env_mountpoint}/var/db/freebsd-update" install
-  quit_err_msg_if_rc_not_0 "${?}" "base-system-patch install failure" 10
+  quit_rem_be_if_rc_not_0 "${?}" "base-system-patch install failure" 10
   current_vers=$(freebsd-version -u)
   echo "Base system patches to ${current_vers} complete. Boot into ${boot_env_fullname}, and check 'freebsd-version -u'."
 }
@@ -233,12 +235,12 @@ do_upgrade_system_to_release() {
   # fetch and merge-compare the new release into the new BE
   echo "Fetching and merge-comparing new release with 'freebsd-update -b ${boot_env_mountpoint} -d ${boot_env_mountpoint}/var/db/freebsd-update -r ${release_vers}-RELEASE upgrade'..."
   freebsd-update -b "${boot_env_mountpoint}" -d "${boot_env_mountpoint}/var/db/freebsd-update" -r "${release_vers}-RELEASE" upgrade
-  quit_err_msg_if_rc_not_0 "${?}" "release fetch/merge-compare failure" 10
+  quit_rem_be_if_rc_not_0 "${?}" "release fetch/merge-compare failure" 10
 
   # install the new release into the new BE
   echo "Installing new release with 'freebsd-update -b ${boot_env_mountpoint} -d ${boot_env_mountpoint}/var/db/freebsd-update -r ${release_vers}-RELEASE install'..."
   freebsd-update -b "${boot_env_mountpoint}" -d "${boot_env_mountpoint}/var/db/freebsd-update" -r "${release_vers}-RELEASE" install
-  quit_err_msg_if_rc_not_0 "${?}" "release install failure" 10
+  quit_rem_be_if_rc_not_0 "${?}" "release install failure" 10
   echo "Release install complete. Boot into ${boot_env_fullname}, and run 'freebsd-update install' again."
 }
 
