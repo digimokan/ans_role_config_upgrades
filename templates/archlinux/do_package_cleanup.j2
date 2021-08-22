@@ -234,6 +234,7 @@ do_list_foreign_packages() {
 }
 
 main() {
+  get_cmd_opts "$@"
   if [ "${uninstall_orphan_packages}" = 'true' ]; then
     check_running_as_root "$@"
     do_uninstall_orphan_packages "$@"
