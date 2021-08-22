@@ -1,0 +1,3 @@
+# file path to system wide pkg utility config file
+pkg_conf_file_path: "/usr/local/etc/pkg.conf"
+

@@ -13,3 +13,13 @@
   loop_control:
     loop_var: script_name
 
+- name: "Create alias 'pkg details' in {{ pkg_conf_file_path }}"
+  ansible.builtin.lineinfile:
+    path: "{{ pkg_conf_file_path }}"
+    insertafter: >-
+      ^ALIAS(.*)\{$
+      line: '  details = search -e -Q name -Q version -Q www -Q licenses -Q maintainer -Q depends-on -Q required-by'
+    state: present
+  become: true
+  become_user: root
+
