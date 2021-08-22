@@ -234,23 +234,21 @@ do_list_foreign_packages() {
 }
 
 main() {
-  get_cmd_opts "$@"
-  if [ "${list_foreign_packages}" = 'true' ]; then
-    do_list_foreign_packages "$@"
-  fi
-  check_running_as_root "$@"
   if [ "${uninstall_orphan_packages}" = 'true' ]; then
+    check_running_as_root "$@"
     do_uninstall_orphan_packages "$@"
-  fi
-  if [ "${delete_cache_packages}" = 'true' ]; then
+  elif [ "${delete_cache_packages}" = 'true' ]; then
+    check_running_as_root "$@"
     do_delete_cache_packages "$@"
-  fi
-  if [ "${delete_uninstalled_packages}" = 'true' ]; then
+  elif [ "${delete_uninstalled_packages}" = 'true' ]; then
+    check_running_as_root "$@"
     do_delete_uninstalled_packages "$@"
-  fi
-  if [ "${list_foreign_packages}" = 'true' ]; then
+  elif [ "${list_foreign_packages}" = 'true' ]; then
     do_list_foreign_packages "$@"
+  else
+    quit_err_msg_with_help "no valid option selected" 1
   fi
+
   exit 0
 }
 

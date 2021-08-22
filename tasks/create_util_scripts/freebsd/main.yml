@@ -1,0 +1,17 @@
+- name: "Create '/usr/local/bin/' utility scripts"
+  ansible.builtin.template:
+    dest: "/usr/local/bin/{{ script_name }}.sh"
+    src: "archlinux/{{ script_name }}.j2"
+    owner: 'root'
+    group: 'root'
+    mode: '755'
+    force: yes
+  become: true
+  become_user: root
+  loop:
+    - 'do_mirrors_sysupgrade'
+    - 'do_package_cleanup'
+    - 'do_pacnew_merge'
+  loop_control:
+    loop_var: script_name
+
