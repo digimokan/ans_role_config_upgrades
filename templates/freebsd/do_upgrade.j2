@@ -235,7 +235,7 @@ do_upgrade_system_to_release() {
   # fetch and merge-compare the new release into the new BE
   echo "Fetching and merge-comparing new release with 'freebsd-update -b ${boot_env_mountpoint} -d ${boot_env_mountpoint}/var/db/freebsd-update -r ${release_vers}-RELEASE upgrade'..."
   freebsd-update -b "${boot_env_mountpoint}" -d "${boot_env_mountpoint}/var/db/freebsd-update" -r "${release_vers}-RELEASE" upgrade
-  quit_rem_be_if_rc_not_0 "${?}" "release fetch/merge-compare failure" 10
+  quit_rem_be_if_rc_not_0 "${?}" "release fetch or merge-compare failure" 10
 
   # install the new release into the new BE
   echo "Installing new release with 'freebsd-update -b ${boot_env_mountpoint} -d ${boot_env_mountpoint}/var/db/freebsd-update -r ${release_vers}-RELEASE install'..."
