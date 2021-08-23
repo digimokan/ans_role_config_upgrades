@@ -230,7 +230,7 @@ do_upgrade_system_to_release() {
   mount_boot_env "${boot_env_basename}_release"
 
   # delete base-system-db in current BE, so that it won't be used
-  rm -Rf /var/db/freebsd-update
+  # rm -Rf /var/db/freebsd-update
 
   # fetch and merge-compare the new release into the new BE
   echo "Fetching and merge-comparing new release with 'freebsd-update -b ${boot_env_mountpoint} -d ${boot_env_mountpoint}/var/db/freebsd-update -r ${release_vers}-RELEASE upgrade'..."
