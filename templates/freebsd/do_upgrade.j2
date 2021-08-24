@@ -25,7 +25,7 @@ print_usage() {
   echo 'USAGE:'
   echo "  $(basename "${0}")        -h"
   echo "  sudo  $(basename "${0}")  -p  [-n]"
-  echo "  sudo  $(basename "${0}")  -t"
+  echo "  sudo  $(basename "${0}")  -t  [-n]"
   echo "  sudo  $(basename "${0}")  -r <release_vers>"
   echo "  sudo  $(basename "${0}")  -o  [-n]"
   echo "  sudo  $(basename "${0}")  -c  [-n]"
@@ -193,6 +193,10 @@ quit_rem_be_if_rc_not_0() {
   fi
 }
 
+delete_local_base_system_db() {
+  rm -rf /var/db/freebsd-update/*
+}
+
 mount_boot_env() {
   boot_env_fullname="${1}"
 
@@ -238,20 +242,25 @@ do_upgrade_packages() {
 }
 
 do_upgrade_system_patches() {
+  # delete base-system-db in current BE, so that it won't be used
+  delete_local_base_system_db
+
   # attempt initial base-system-patch fetch, just to check if patches available
   freebsd-update fetch
+  quit_rem_be_if_rc_not_0 "${?}" "base-system-patch fetch failure" 10
+
   freebsd-update updatesready
   exit_code="${?}"
-  if [ "${exit_code}" = 2 ]; then
-    echo "Base system is up to date. No patches to apply."
+  if [ "${dry_run}" = 'true' ] && [ "${exit_code}" = 2 ]; then
+    echo "Dry-run complete. Base system patches available to fetch and install."
+    exit 0
+  elif [ "${dry_run}" = 'true' ]; then
+    echo "Dry-run complete. Base system is up to date. No patches to apply."
     exit 0
   fi
 
   # base-system patches ARE available, so create a new boot environment for them
   mount_boot_env "${boot_env_basename}_syspatches"
-
-  # delete base-system-db in current BE, so that it won't be used
-  rm -rf /var/db/freebsd-update/*
 
   # fetch the available base-system patches into the new BE
   echo "Fetching base system patches with 'freebsd-update -b ${boot_env_mountpoint} -d ${boot_env_mountpoint}/var/db/freebsd-update fetch'..."
@@ -267,10 +276,10 @@ do_upgrade_system_patches() {
 }
 
 do_upgrade_system_to_release() {
-  mount_boot_env "${boot_env_basename}_release"
-
   # delete base-system-db in current BE, so that it won't be used
-  rm -rf /var/db/freebsd-update/*
+  delete_local_base_system_db
+
+  mount_boot_env "${boot_env_basename}_release"
 
   # fetch and merge-compare the new release into the new BE
   echo "Fetching and merge-comparing new release with 'freebsd-update -b ${boot_env_mountpoint} -d ${boot_env_mountpoint}/var/db/freebsd-update -r ${release_vers}-RELEASE upgrade'..."
