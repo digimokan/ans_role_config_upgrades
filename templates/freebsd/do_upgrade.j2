@@ -14,6 +14,8 @@
 upgrade_packages='false'
 upgrade_system_patches='false'
 upgrade_system_to_release='false'
+uninstall_orphan_packages='false'
+delete_cache_packages='false'
 dry_run='false'
 
 # upgrade boot environment base name
@@ -25,6 +27,8 @@ print_usage() {
   echo "  sudo  $(basename "${0}")  -p  [-n]"
   echo "  sudo  $(basename "${0}")  -t"
   echo "  sudo  $(basename "${0}")  -r <release_vers>"
+  echo "  sudo  $(basename "${0}")  -o  [-n]"
+  echo "  sudo  $(basename "${0}")  -c  [-n]"
   echo 'OPTIONS:'
   echo '  -h, --help'
   echo '      print this help message'
@@ -34,24 +38,30 @@ print_usage() {
   echo "      upgrade base system with patches"
   echo "  -r <release_vers>, --upgrade-system-to-release=<release_vers>"
   echo "      upgrade base system to new release (release_vers 14.0, 15.1, etc)"
+  echo "  -o, --uninstall-orphan-packages"
+  echo '      uninstall all orphan pkgs (installed as deps, now not required)'
+  echo "  -c, --delete-cache-packages"
+  echo "      delete old pkg versions from the cache"
   echo '  -n, --dry-run'
   echo '      do not take any action, only show what would be done'
   echo 'EXIT CODES:'
   echo '    0  ok'
   echo '    1  usage, arguments, or options error'
   echo '    5  boot environment error'
-  echo '   10  update/upgrade error'
+  echo '   10  update, upgrade, or removal error'
   echo '  255  unknown error'
   exit "${1}"
 }
 
 get_cmd_opts() {
-  while getopts ':hptr:n-:' option; do
+  while getopts ':hptr:ocn-:' option; do
     case "${option}" in
       h)  handle_help ;;
       p)  handle_upgrade_packages ;;
       t)  handle_upgrade_system_patches ;;
       r)  handle_upgrade_system_to_release "${OPTARG}" ;;
+      o)  handle_uninstall_orphan_packages ;;
+      c)  handle_delete_cache_packages ;;
       n)  handle_dry_run ;;
       -)  LONG_OPTARG="${OPTARG#*=}"
           case ${OPTARG} in
@@ -63,6 +73,10 @@ get_cmd_opts() {
             upgrade-system-patches=*)      handle_illegal_option_arg "${OPTARG}" ;;
             upgrade-system-to-release=?*)  handle_upgrade_system_to_release "${LONG_OPTARG}" ;;
             upgrade-system-to-release*)    handle_missing_option_arg "${OPTARG}" ;;
+            uninstall-orphan-packages)     handle_uninstall_orphan_packages ;;
+            uninstall-orphan-packages=*)   handle_illegal_option_arg "${OPTARG}" ;;
+            delete-cache-packages)         handle_delete_cache_packages ;;
+            delete-cache-packages=*)       handle_illegal_option_arg "${OPTARG}" ;;
             dry-run)                       handle_dry_run ;;
             dry-run=*)                     handle_illegal_option_arg "${OPTARG}" ;;
             '')                            break ;; # non-option arg starting with '-'
@@ -79,7 +93,9 @@ handle_help() {
 
 handle_upgrade_packages() {
   if [ "${upgrade_system_patches}" = 'true' ] || \
-     [ "${upgrade_system_to_release}" = 'true' ]; then
+     [ "${upgrade_system_to_release}" = 'true' ] || \
+     [ "${uninstall_orphan_packages}" = 'true' ] || \
+     [ "${delete_cache_packages}" = 'true' ]; then
     quit_err_msg_with_help "Mutually exclusive options selected" 1
   fi
   upgrade_packages='true'
@@ -87,7 +103,9 @@ handle_upgrade_packages() {
 
 handle_upgrade_system_patches() {
   if [ "${upgrade_packages}" = 'true' ] || \
-     [ "${upgrade_system_to_release}" = 'true' ]; then
+     [ "${upgrade_system_to_release}" = 'true' ] || \
+     [ "${uninstall_orphan_packages}" = 'true' ] || \
+     [ "${delete_cache_packages}" = 'true' ]; then
     quit_err_msg_with_help "Mutually exclusive options selected" 1
   fi
   upgrade_system_patches='true'
@@ -95,11 +113,33 @@ handle_upgrade_system_patches() {
 
 handle_upgrade_system_to_release() {
   if [ "${upgrade_packages}" = 'true' ] || \
-     [ "${upgrade_system_patches}" = 'true' ]; then
+     [ "${upgrade_system_patches}" = 'true' ] || \
+     [ "${uninstall_orphan_packages}" = 'true' ] || \
+     [ "${delete_cache_packages}" = 'true' ]; then
     quit_err_msg_with_help "Mutually exclusive options selected" 1
   fi
   upgrade_system_to_release='true'
   release_vers="${1}"
+}
+
+handle_uninstall_orphan_packages() {
+  if [ "${upgrade_packages}" = 'true' ] || \
+     [ "${upgrade_system_patches}" = 'true' ] || \
+     [ "${upgrade_system_to_release}" = 'true' ] || \
+     [ "${delete_cache_packages}" = 'true' ]; then
+    quit_err_msg_with_help "Mutually exclusive options selected" 1
+  fi
+  uninstall_orphan_packages='true'
+}
+
+handle_delete_cache_packages() {
+  if [ "${upgrade_packages}" = 'true' ] || \
+     [ "${upgrade_system_patches}" = 'true' ] || \
+     [ "${upgrade_system_to_release}" = 'true' ] || \
+     [ "${uninstall_orphan_packages}" = 'true' ]; then
+    quit_err_msg_with_help "Mutually exclusive options selected" 1
+  fi
+  delete_cache_packages='true'
 }
 
 handle_dry_run() {
@@ -194,7 +234,7 @@ do_upgrade_packages() {
   echo "Upgrading all packages with 'pkg -r ${boot_env_mountpoint} upgrade'..."
   pkg -r "${boot_env_mountpoint}" upgrade
   quit_rem_be_if_rc_not_0 "${?}" "package upgrade operation failure" 10
-  echo "Package upgrades complete. Boot into ${boot_env_fullname} to test."
+  echo "Package upgrades complete. Boot into ${boot_env_fullname}, and run 'pkg audit --fetch'."
 }
 
 do_upgrade_system_patches() {
@@ -244,6 +284,28 @@ do_upgrade_system_to_release() {
   echo "Release install complete. Boot into ${boot_env_fullname}, and run 'freebsd-update install' again."
 }
 
+do_uninstall_orphan_packages() {
+  if [ "${dry_run}" = 'true' ]; then
+    echo "Doing dry-run of orphan-packages-uninstall with 'pkg autoremove --dry-run'..."
+    pkg autoremove --dry-run
+  else
+    echo "Doing orphan-packages-uninstall with 'pkg autoremove'..."
+    pkg autoremove
+    quit_rem_be_if_rc_not_0 "${?}" "orphan packages autoremove failure" 10
+  fi
+}
+
+do_delete_cache_packages() {
+  if [ "${dry_run}" = 'true' ]; then
+    echo "Doing dry-run of cached-packages-delete with 'pkg clean --dry-run'..."
+    pkg clean --dry-run
+  else
+    echo "Doing cached-packages-delete with 'pkg clean'..."
+    pkg clean
+    quit_rem_be_if_rc_not_0 "${?}" "cached packages delete failure" 10
+  fi
+}
+
 main() {
   get_cmd_opts "$@"
   check_running_as_root "$@"
@@ -253,6 +315,10 @@ main() {
     do_upgrade_system_patches "$@"
   elif [ "${upgrade_system_to_release}" = 'true' ]; then
     do_upgrade_system_to_release "$@"
+  elif [ "${uninstall_orphan_packages}" = 'true' ]; then
+    do_uninstall_orphan_packages "$@"
+  elif [ "${delete_cache_packages}" = 'true' ]; then
+    do_delete_cache_packages "$@"
   else
     quit_err_msg_with_help "no valid option selected" 1
   fi
