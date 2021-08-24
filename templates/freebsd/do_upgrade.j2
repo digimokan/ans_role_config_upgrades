@@ -242,7 +242,7 @@ do_upgrade_packages() {
 }
 
 do_upgrade_system_patches() {
-  # delete base-system-db in current BE, so that it won't be used
+  # delete base-system-db, so that it won't be used for initial fetch
   delete_local_base_system_db
 
   # attempt initial base-system-patch fetch, just to check if patches available
@@ -251,13 +251,19 @@ do_upgrade_system_patches() {
 
   freebsd-update updatesready
   exit_code="${?}"
-  if [ "${dry_run}" = 'true' ] && [ "${exit_code}" = 2 ]; then
+  if [ "${exit_code}" = 2 ]; then
+    echo "Base system is up to date. No patches to apply."
+    exit 0
+  elif [ "${dry_run}" = 'true' ] && [ "${exit_code}" = 2 ]; then
     echo "Dry-run complete. Base system is up to date. No patches to apply."
     exit 0
   elif [ "${dry_run}" = 'true' ]; then
     echo "Dry-run complete. Base system patches available to fetch and install."
     exit 0
   fi
+
+  # delete base-system-db in current BE, so that it won't be used
+  delete_local_base_system_db
 
   # base-system patches ARE available, so create a new boot environment for them
   mount_boot_env "${boot_env_basename}_syspatches"
