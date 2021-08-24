@@ -252,10 +252,10 @@ do_upgrade_system_patches() {
   freebsd-update updatesready
   exit_code="${?}"
   if [ "${dry_run}" = 'true' ] && [ "${exit_code}" = 2 ]; then
-    echo "Dry-run complete. Base system patches available to fetch and install."
+    echo "Dry-run complete. Base system is up to date. No patches to apply."
     exit 0
   elif [ "${dry_run}" = 'true' ]; then
-    echo "Dry-run complete. Base system is up to date. No patches to apply."
+    echo "Dry-run complete. Base system patches available to fetch and install."
     exit 0
   fi
 
