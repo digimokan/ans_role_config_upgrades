@@ -13,3 +13,6 @@ pkg_alias_local_db_search: 'qs'
 # pkg cmd alias for local db package details
 pkg_alias_local_db_details: 'qi'
 
+# pkg cmd alias for local db package message presented on installation
+pkg_alias_local_db_message: 'qm'
+
