@@ -13,15 +13,3 @@
   loop_control:
     loop_var: script_name
 
-- name: "Create alias 'pkg details' in {{ pkg_conf_file_path }}"
-  ansible.builtin.blockinfile:
-    path: "{{ pkg_conf_file_path }}"
-    insertafter: >-
-      ^ALIAS(.*)\{$
-    block: '  details = search -Q name -Q comment -Q version -Q www -Q licenses -Q maintainer -Q depends-on -Q required-by,'
-    marker: "# {mark} ANSIBLE MANAGED BLOCK: pkg alias for remote-repo pkg details"
-    state: present
-    create: no
-  become: true
-  become_user: root
-

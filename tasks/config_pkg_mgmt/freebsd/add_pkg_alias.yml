@@ -1,0 +1,12 @@
+- name: "Create alias 'pkg {{ alias_name }}' in {{ pkg_conf_file_path }}"
+  ansible.builtin.blockinfile:
+    path: "{{ pkg_conf_file_path }}"
+    insertafter: >-
+      ^ALIAS(.*)\{$
+    block: '  {{ alias_name }}{{ alias_command }},'
+    marker: "# {mark} ANSIBLE MANAGED BLOCK: pkg alias for {{ alias_descrip }}"
+    state: present
+    create: no
+  become: true
+  become_user: root
+

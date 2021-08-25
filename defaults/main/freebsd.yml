@@ -1,3 +1,15 @@
 # file path to system wide pkg utility config file
 pkg_conf_file_path: "/usr/local/etc/pkg.conf"
 
+# pkg cmd alias for remote repo package search
+pkg_alias_remote_repo_search: 'ss'
+
+# pkg cmd alias for remote repo package details
+pkg_alias_remote_repo_details: 'si'
+
+# pkg cmd alias for local db package search
+pkg_alias_local_db_search: 'qs'
+
+# pkg cmd alias for local db package details
+pkg_alias_local_db_search: 'qi'
+
