@@ -12,6 +12,7 @@
 
 # User Selection Options
 upgrade_packages='false'
+force_reinstall_packages='false'
 upgrade_system_patches='false'
 upgrade_system_to_release='false'
 uninstall_orphan_packages='false'
@@ -25,6 +26,7 @@ print_usage() {
   echo 'USAGE:'
   echo "  $(basename "${0}")        -h"
   echo "  sudo  $(basename "${0}")  -p  [-n]"
+  echo "  sudo  $(basename "${0}")  -p  -f"
   echo "  sudo  $(basename "${0}")  -t  [-n]"
   echo "  sudo  $(basename "${0}")  -r <release_vers>"
   echo "  sudo  $(basename "${0}")  -o  [-n]"
@@ -34,14 +36,16 @@ print_usage() {
   echo '      print this help message'
   echo '  -p, --upgrade-packages'
   echo '      upgrade all installed packages'
-  echo "  -t, --upgrade-system-patches"
-  echo "      upgrade base system with patches"
-  echo "  -r <release_vers>, --upgrade-system-to-release=<release_vers>"
-  echo "      upgrade base system to new release (release_vers 14.0, 15.1, etc)"
-  echo "  -o, --uninstall-orphan-packages"
+  echo '  -f, --force-reinstall-packages'
+  echo '      reinstall all packages (necessary after upgrade-system-to-release)'
+  echo '  -t, --upgrade-system-patches'
+  echo '      upgrade base system with patches'
+  echo '  -r <release_vers>, --upgrade-system-to-release=<release_vers>'
+  echo '      upgrade base system to new release (release_vers 14.0, 15.1, etc)'
+  echo '  -o, --uninstall-orphan-packages'
   echo '      uninstall all orphan pkgs (installed as deps, now not required)'
-  echo "  -c, --delete-cache-packages"
-  echo "      delete old pkg versions from the cache"
+  echo '  -c, --delete-cache-packages'
+  echo '      delete old pkg versions from the cache'
   echo '  -n, --dry-run'
   echo '      do not take any action, only show what would be done'
   echo 'EXIT CODES:'
@@ -54,10 +58,11 @@ print_usage() {
 }
 
 get_cmd_opts() {
-  while getopts ':hptr:ocn-:' option; do
+  while getopts ':hpftr:ocn-:' option; do
     case "${option}" in
       h)  handle_help ;;
       p)  handle_upgrade_packages ;;
+      f)  handle_force_reinstall_packages ;;
       t)  handle_upgrade_system_patches ;;
       r)  handle_upgrade_system_to_release "${OPTARG}" ;;
       o)  handle_uninstall_orphan_packages ;;
@@ -69,6 +74,8 @@ get_cmd_opts() {
             help=*)                        handle_illegal_option_arg "${OPTARG}" ;;
             upgrade-packages)              handle_upgrade_packages ;;
             upgrade-packages=*)            handle_illegal_option_arg "${OPTARG}" ;;
+            force-reinstall-packages)      handle_force_reinstall_packages ;;
+            force-reinstall-packages=*)    handle_illegal_option_arg "${OPTARG}" ;;
             upgrade-system-patches)        handle_upgrade_system_patches ;;
             upgrade-system-patches=*)      handle_illegal_option_arg "${OPTARG}" ;;
             upgrade-system-to-release=?*)  handle_upgrade_system_to_release "${LONG_OPTARG}" ;;
@@ -101,6 +108,17 @@ handle_upgrade_packages() {
   upgrade_packages='true'
 }
 
+handle_force_reinstall_packages() {
+  if [ "${upgrade_system_patches}" = 'true' ] || \
+     [ "${upgrade_system_to_release}" = 'true' ] || \
+     [ "${uninstall_orphan_packages}" = 'true' ] || \
+     [ "${delete_cache_packages}" = 'true' ] || \
+     [ "${dry_run}" = 'true' ]; then
+    quit_err_msg_with_help "Mutually exclusive options selected" 1
+  fi
+  force_reinstall_packages='true'
+}
+
 handle_upgrade_system_patches() {
   if [ "${upgrade_packages}" = 'true' ] || \
      [ "${upgrade_system_to_release}" = 'true' ] || \
@@ -115,7 +133,8 @@ handle_upgrade_system_to_release() {
   if [ "${upgrade_packages}" = 'true' ] || \
      [ "${upgrade_system_patches}" = 'true' ] || \
      [ "${uninstall_orphan_packages}" = 'true' ] || \
-     [ "${delete_cache_packages}" = 'true' ]; then
+     [ "${delete_cache_packages}" = 'true' ] || \
+     [ "${dry_run}" = 'true' ]; then
     quit_err_msg_with_help "Mutually exclusive options selected" 1
   fi
   upgrade_system_to_release='true'
@@ -143,6 +162,10 @@ handle_delete_cache_packages() {
 }
 
 handle_dry_run() {
+  if [ "${upgrade_system_to_release}" = 'true' ] || \
+     [ "${force_reinstall_packages}" = 'true' ]; then
+    quit_err_msg_with_help "Mutually exclusive options selected" 1
+  fi
   dry_run='true'
 }
 
@@ -220,10 +243,12 @@ do_upgrade_packages() {
   fi
 
   # check if any updates available - if not, exit
-  pkg_check_stdout=$(pkg upgrade --dry-run --quiet)
-  if [ "${pkg_check_stdout}" = '' ]; then
-    echo "All packages are up to date. Nothing to do."
-    exit 0
+  if [ "${force_reinstall_packages}" = 'false' ]; then
+    pkg_check_stdout=$(pkg upgrade --dry-run --quiet)
+    if [ "${pkg_check_stdout}" = '' ]; then
+      echo "All packages are up to date. Nothing to do."
+      exit 0
+    fi
   fi
 
   # updates ARE available, so create a new boot environment for them
@@ -235,8 +260,9 @@ do_upgrade_packages() {
   quit_rem_be_if_rc_not_0 "${?}" "local package repo update failure" 10
 
   # upgrade all packages into the new BE
-  echo "Upgrading all packages with 'pkg -r ${boot_env_mountpoint} upgrade'..."
-  pkg -r "${boot_env_mountpoint}" upgrade
+  if [ "${force_reinstall_packages}" = 'true' ]; then run_forced='-f '; else run_forced=''; fi
+  echo "Upgrading all packages with 'pkg -r ${run_forced}${boot_env_mountpoint} upgrade'..."
+  pkg -r "${run_forced}""${boot_env_mountpoint}" upgrade
   quit_rem_be_if_rc_not_0 "${?}" "package upgrade operation failure" 10
   echo "Package upgrades complete. Boot into ${boot_env_fullname}, and run 'pkg audit --fetch'."
 }
@@ -296,7 +322,7 @@ do_upgrade_system_to_release() {
   echo "Installing new release with 'freebsd-update -b ${boot_env_mountpoint} -d ${boot_env_mountpoint}/var/db/freebsd-update -r ${release_vers}-RELEASE install'..."
   freebsd-update -b "${boot_env_mountpoint}" -d "${boot_env_mountpoint}/var/db/freebsd-update" -r "${release_vers}-RELEASE" install
   quit_rem_be_if_rc_not_0 "${?}" "release install failure" 10
-  echo "Release install complete. Boot into ${boot_env_fullname}, and run 'freebsd-update install' again."
+  echo "First-stage install complete. Boot into ${boot_env_fullname}. Run 'freebsd-update install' again. Then run this script with '-p -f' options."
 }
 
 do_uninstall_orphan_packages() {
