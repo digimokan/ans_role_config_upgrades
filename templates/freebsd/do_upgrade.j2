@@ -261,8 +261,8 @@ do_upgrade_packages() {
 
   # upgrade all packages into the new BE
   if [ "${force_reinstall_packages}" = 'true' ]; then run_forced='-f '; else run_forced=''; fi
-  echo "Upgrading all packages with 'pkg -r ${run_forced}${boot_env_mountpoint} upgrade'..."
-  pkg -r "${run_forced}""${boot_env_mountpoint}" upgrade
+  echo "Upgrading all packages with 'pkg ${run_forced}-r ${boot_env_mountpoint} upgrade'..."
+  pkg "${run_forced}"-r "${boot_env_mountpoint}" upgrade
   quit_rem_be_if_rc_not_0 "${?}" "package upgrade operation failure" 10
   echo "Package upgrades complete. Boot into ${boot_env_fullname}, and run 'pkg audit --fetch'."
 }
