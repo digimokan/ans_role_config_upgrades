@@ -319,8 +319,8 @@ do_upgrade_system_to_release() {
   quit_rem_be_if_rc_not_0 "${?}" "release fetch or merge-compare failure" 10
 
   # install the new release into the new BE
-  echo "Installing new release with 'freebsd-update -b ${boot_env_mountpoint} -d ${boot_env_mountpoint}/var/db/freebsd-update -r ${release_vers}-RELEASE install'..."
-  freebsd-update -b "${boot_env_mountpoint}" -d "${boot_env_mountpoint}/var/db/freebsd-update" -r "${release_vers}-RELEASE" install
+  echo "Installing new release with 'freebsd-update -b ${boot_env_mountpoint} -d ${boot_env_mountpoint}/var/db/freebsd-update install'..."
+  freebsd-update -b "${boot_env_mountpoint}" -d "${boot_env_mountpoint}/var/db/freebsd-update" install
   quit_rem_be_if_rc_not_0 "${?}" "release install failure" 10
   echo "First-stage install complete. Boot into ${boot_env_fullname}. Run 'freebsd-update install' again. Then run this script with '-p -f' options."
 }
