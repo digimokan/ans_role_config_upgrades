@@ -256,13 +256,13 @@ do_upgrade_packages() {
 
   # update local package repo database in the new BE
   echo "Updating local package repo with 'pkg -r ${boot_env_mountpoint} update -f'..."
-  pkg -r "${boot_env_mountpoint} update -f"
+  pkg -r "${boot_env_mountpoint}" update -f
   quit_rem_be_if_rc_not_0 "${?}" "local package repo update failure" 10
 
   # upgrade all packages into the new BE
   if [ "${force_reinstall_packages}" = 'true' ]; then run_forced=' -f'; else run_forced=''; fi
   echo "Upgrading all packages with 'pkg -r ${boot_env_mountpoint} upgrade${run_forced}'..."
-  pkg -r "${boot_env_mountpoint} upgrade${run_forced}"
+  pkg -r "${boot_env_mountpoint}" upgrade"${run_forced}"
   quit_rem_be_if_rc_not_0 "${?}" "package upgrade operation failure" 10
   echo "Package upgrades complete. Boot into ${boot_env_fullname}, and run 'pkg audit --fetch'."
 }
