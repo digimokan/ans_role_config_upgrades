@@ -2,7 +2,7 @@
 # vim: set filetype=sh:
 
 ################################################################################
-# purpose:   update FreeBSD packages and base system to new boot environments
+# purpose:   update FreeBSD packages and base system, and do package cleanup
 # args/opts: see usage (run with -h option)
 # meta:      script installed by ansible {{ role_name | basename }}
 # refs:      https://klarasystems.com/articles/managing-boot-environments/
@@ -18,9 +18,6 @@ upgrade_system_to_release='false'
 uninstall_orphan_packages='false'
 delete_cache_packages='false'
 dry_run='false'
-
-# upgrade boot environment base name
-boot_env_basename='upgrade_'$(date +%Y_%m_%d_%H%M)
 
 print_usage() {
   echo 'USAGE:'
@@ -51,7 +48,6 @@ print_usage() {
   echo 'EXIT CODES:'
   echo '    0  ok'
   echo '    1  usage, arguments, or options error'
-  echo '    5  boot environment error'
   echo '   10  update, upgrade, or removal error'
   echo '  255  unknown error'
   exit "${1}"
@@ -205,36 +201,21 @@ check_running_as_root() {
   fi
 }
 
-quit_rem_be_if_rc_not_0() {
+quit_if_rc_not_0() {
   cmd_exit_code="${1}"
   err_msg="${2}"
   script_exit_code="${3}"
   if [ "${cmd_exit_code}" != 0 ]; then
-    bectl unmount "${boot_env_fullname}" > /dev/null 2>&1
-    bectl destroy "${boot_env_fullname}" > /dev/null 2>&1
     quit_err_msg "${err_msg}" "${script_exit_code}"
   fi
 }
 
-delete_local_base_system_db() {
-  rm -rf /var/db/freebsd-update/*
-}
-
-mount_boot_env() {
-  boot_env_fullname="${1}"
-
-  # create the boot environment
-  bectl create "${boot_env_fullname}"
-  quit_rem_be_if_rc_not_0 "${?}" "boot environment creation failure" 5
-
-  # mount the boot environment, save boot_env_mountpoint for caller
-  echo "mounting new boot environment '${boot_env_fullname}'..."
-  mount_info=$(bectl mount "${boot_env_fullname}")
-  quit_rem_be_if_rc_not_0 "${?}" "boot environment mount failure" 5
-  boot_env_mountpoint=$(echo "${mount_info}" | awk '{print $NF}')
-}
-
 do_upgrade_packages() {
+  # update local package repo database
+  echo "Updating local package repo with 'pkg update -f'..."
+  pkg update -f
+  quit_if_rc_not_0 "${?}" "local package repo update failure" 10
+
   # if doing a dry-run, do dry-run, and exit
   if [ "${dry_run}" = 'true' ]; then
     echo "Doing dry-run upgrade of all packages with 'pkg upgrade --dry-run'..."
@@ -251,30 +232,19 @@ do_upgrade_packages() {
     fi
   fi
 
-  # updates ARE available, so create a new boot environment for them
-  mount_boot_env "${boot_env_basename}_packages"
-
-  # update local package repo database in the new BE
-  echo "Updating local package repo with 'pkg -r ${boot_env_mountpoint} update -f'..."
-  pkg -r "${boot_env_mountpoint}" update -f
-  quit_rem_be_if_rc_not_0 "${?}" "local package repo update failure" 10
-
-  # upgrade all packages into the new BE
+  # upgrade all packages
   run_forced=''
   [ "${force_reinstall_packages}" = 'true' ] && run_forced='yes'
-  echo "Upgrading all packages with 'pkg -r ${boot_env_mountpoint} upgrade ${run_forced:+'-f'}'..."
-  pkg -r "${boot_env_mountpoint}" upgrade ${run_forced:+'-f'}
-  quit_rem_be_if_rc_not_0 "${?}" "package upgrade operation failure" 10
-  echo "Package upgrades complete. Boot into ${boot_env_fullname}, and run 'pkg audit --fetch'."
+  echo "Upgrading all packages with 'pkg upgrade ${run_forced:+'-f'}'..."
+  pkg upgrade ${run_forced:+'-f'}
+  quit_if_rc_not_0 "${?}" "package upgrade operation failure" 10
+  echo "Package upgrades complete. Reboot system, and run 'pkg audit --fetch'."
 }
 
 do_upgrade_system_patches() {
-  # delete base-system-db, so that it won't be used for initial fetch
-  delete_local_base_system_db
-
   # attempt initial base-system-patch fetch, just to check if patches available
   freebsd-update fetch
-  quit_rem_be_if_rc_not_0 "${?}" "base-system-patch fetch failure" 10
+  quit_if_rc_not_0 "${?}" "base-system-patch fetch failure" 10
 
   freebsd-update updatesready
   exit_code="${?}"
@@ -289,41 +259,25 @@ do_upgrade_system_patches() {
     exit 0
   fi
 
-  # delete base-system-db in current BE, so that it won't be used
-  delete_local_base_system_db
-
-  # base-system patches ARE available, so create a new boot environment for them
-  mount_boot_env "${boot_env_basename}_syspatches"
-
-  # fetch the available base-system patches into the new BE
-  echo "Fetching base system patches with 'freebsd-update -b ${boot_env_mountpoint} -d ${boot_env_mountpoint}/var/db/freebsd-update fetch'..."
-  freebsd-update -b "${boot_env_mountpoint}" -d "${boot_env_mountpoint}/var/db/freebsd-update" fetch
-  quit_rem_be_if_rc_not_0 "${?}" "base-system-patch fetch failure" 10
-
   # install the fetched base-system patches into the new BE
-  echo "Installing base system patches with 'freebsd-update -b ${boot_env_mountpoint} -d ${boot_env_mountpoint}/var/db/freebsd-update install'..."
-  freebsd-update -b "${boot_env_mountpoint}" -d "${boot_env_mountpoint}/var/db/freebsd-update" install
-  quit_rem_be_if_rc_not_0 "${?}" "base-system-patch install failure" 10
+  echo "Installing base system patches with 'freebsd-update install'..."
+  freebsd-update install
+  quit_if_rc_not_0 "${?}" "base-system-patch install failure" 10
   current_vers=$(freebsd-version -u)
-  echo "Base system patches to ${current_vers} complete. Boot into ${boot_env_fullname}, and check 'freebsd-version -u'."
+  echo "Base system patched to new ${current_vers} complete. Reboot system, and check 'freebsd-version -u'."
 }
 
 do_upgrade_system_to_release() {
-  # delete base-system-db in current BE, so that it won't be used
-  delete_local_base_system_db
-
-  mount_boot_env "${boot_env_basename}_release"
-
   # fetch and merge-compare the new release into the new BE
-  echo "Fetching and merge-comparing new release with 'freebsd-update -b ${boot_env_mountpoint} -d ${boot_env_mountpoint}/var/db/freebsd-update -r ${release_vers}-RELEASE upgrade'..."
-  freebsd-update -b "${boot_env_mountpoint}" -d "${boot_env_mountpoint}/var/db/freebsd-update" -r "${release_vers}-RELEASE" upgrade
-  quit_rem_be_if_rc_not_0 "${?}" "release fetch or merge-compare failure" 10
+  echo "Fetching and merge-comparing new release with 'freebsd-update -r ${release_vers}-RELEASE upgrade'..."
+  freebsd-update -r "${release_vers}-RELEASE" upgrade
+  quit_if_rc_not_0 "${?}" "release fetch or merge-compare failure" 10
 
   # install the new release into the new BE
-  echo "Installing new release with 'freebsd-update -b ${boot_env_mountpoint} -d ${boot_env_mountpoint}/var/db/freebsd-update install'..."
-  freebsd-update -b "${boot_env_mountpoint}" -d "${boot_env_mountpoint}/var/db/freebsd-update" install
-  quit_rem_be_if_rc_not_0 "${?}" "release install failure" 10
-  echo "First-stage install complete. Boot into ${boot_env_fullname}. Run 'freebsd-update install' again. Then run this script with '-p -f' options."
+  echo "Installing new release with 'freebsd-update install'..."
+  freebsd-update install
+  quit_if_rc_not_0 "${?}" "release install failure" 10
+  echo "First-stage install complete. Reboot system. Run 'freebsd-update install' again. Then run this script with '-p -f' options."
 }
 
 do_uninstall_orphan_packages() {
@@ -333,7 +287,7 @@ do_uninstall_orphan_packages() {
   else
     echo "Doing orphan-packages-uninstall with 'pkg autoremove'..."
     pkg autoremove
-    quit_rem_be_if_rc_not_0 "${?}" "orphan packages autoremove failure" 10
+    quit_if_rc_not_0 "${?}" "orphan packages autoremove failure" 10
   fi
 }
 
@@ -344,7 +298,7 @@ do_delete_cache_packages() {
   else
     echo "Doing cached-packages-delete with 'pkg clean'..."
     pkg clean
-    quit_rem_be_if_rc_not_0 "${?}" "cached packages delete failure" 10
+    quit_if_rc_not_0 "${?}" "cached packages delete failure" 10
   fi
 }
 
