@@ -20,16 +20,19 @@ delete_cache_packages='false'
 check_os_version='false'
 dry_run='false'
 
+# Hard-Coded Selections
+prog_name="$(basename "${0}")"
+
 print_usage() {
   echo 'USAGE:'
-  echo "  $(basename "${0}")        -h"
-  echo "  $(basename "${0}")        -v"
-  echo "  sudo  $(basename "${0}")  -p  [-n]"
-  echo "  sudo  $(basename "${0}")  -p  -f"
-  echo "  sudo  $(basename "${0}")  -t  [-n]"
-  echo "  sudo  $(basename "${0}")  -r <release_vers>"
-  echo "  sudo  $(basename "${0}")  -o  [-n]"
-  echo "  sudo  $(basename "${0}")  -c  [-n]"
+  echo "  ${prog_name}        -h"
+  echo "  ${prog_name}        -v"
+  echo "  sudo  ${prog_name}  -p  [-n]"
+  echo "  sudo  ${prog_name}  -p  -f"
+  echo "  sudo  ${prog_name}  -t  [-n]"
+  echo "  sudo  ${prog_name}  -r <release_vers>"
+  echo "  sudo  ${prog_name}  -o  [-n]"
+  echo "  sudo  ${prog_name}  -c  [-n]"
   echo 'OPTIONS:'
   echo '  -h, --help'
   echo '      print this help message'
@@ -296,7 +299,7 @@ do_upgrade_system_patches() {
   freebsd-update install
   quit_if_rc_not_0 "${?}" "base-system-patch install failure" 10
   current_vers=$(freebsd-version -u)
-  echo "Base system patched to new ${current_vers} complete. Reboot system, and check 'freebsd-version -u'."
+  echo "Base system patched to new ${current_vers} complete. Reboot system, and check '${prog_name} -v'."
 }
 
 do_upgrade_system_to_release() {
