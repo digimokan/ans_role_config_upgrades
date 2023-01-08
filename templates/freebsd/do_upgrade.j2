@@ -17,6 +17,7 @@ upgrade_system_patches='false'
 upgrade_system_to_release='false'
 uninstall_orphan_packages='false'
 delete_cache_packages='false'
+check_os_version='false'
 dry_run='false'
 
 print_usage() {
@@ -28,6 +29,7 @@ print_usage() {
   echo "  sudo  $(basename "${0}")  -r <release_vers>"
   echo "  sudo  $(basename "${0}")  -o  [-n]"
   echo "  sudo  $(basename "${0}")  -c  [-n]"
+  echo "  $(basename "${0}")  -v"
   echo 'OPTIONS:'
   echo '  -h, --help'
   echo '      print this help message'
@@ -43,6 +45,8 @@ print_usage() {
   echo '      uninstall all orphan pkgs (installed as deps, now not required)'
   echo '  -c, --delete-cache-packages'
   echo '      delete old pkg versions from the cache'
+  echo '  -v, --check-os-version'
+  echo '      check FreeBSD major version, minor version, and patch-set'
   echo '  -n, --dry-run'
   echo '      do not take any action, only show what would be done'
   echo 'EXIT CODES:'
@@ -54,7 +58,7 @@ print_usage() {
 }
 
 get_cmd_opts() {
-  while getopts ':hpftr:ocn-:' option; do
+  while getopts ':hpftr:ocvn-:' option; do
     case "${option}" in
       h)  handle_help ;;
       p)  handle_upgrade_packages ;;
@@ -63,6 +67,7 @@ get_cmd_opts() {
       r)  handle_upgrade_system_to_release "${OPTARG}" ;;
       o)  handle_uninstall_orphan_packages ;;
       c)  handle_delete_cache_packages ;;
+      v)  handle_check_os_version ;;
       n)  handle_dry_run ;;
       -)  LONG_OPTARG="${OPTARG#*=}"
           case ${OPTARG} in
@@ -80,6 +85,8 @@ get_cmd_opts() {
             uninstall-orphan-packages=*)   handle_illegal_option_arg "${OPTARG}" ;;
             delete-cache-packages)         handle_delete_cache_packages ;;
             delete-cache-packages=*)       handle_illegal_option_arg "${OPTARG}" ;;
+            check-os-version)              handle_check_os_version ;;
+            check-os-version=*)            handle_illegal_option_arg "${OPTARG}" ;;
             dry-run)                       handle_dry_run ;;
             dry-run=*)                     handle_illegal_option_arg "${OPTARG}" ;;
             '')                            break ;; # non-option arg starting with '-'
@@ -98,7 +105,8 @@ handle_upgrade_packages() {
   if [ "${upgrade_system_patches}" = 'true' ] || \
      [ "${upgrade_system_to_release}" = 'true' ] || \
      [ "${uninstall_orphan_packages}" = 'true' ] || \
-     [ "${delete_cache_packages}" = 'true' ]; then
+     [ "${delete_cache_packages}" = 'true' ] || \
+     [ "${check_os_version}" = 'true' ]; then
     quit_err_msg_with_help "Mutually exclusive options selected" 1
   fi
   upgrade_packages='true'
@@ -109,6 +117,7 @@ handle_force_reinstall_packages() {
      [ "${upgrade_system_to_release}" = 'true' ] || \
      [ "${uninstall_orphan_packages}" = 'true' ] || \
      [ "${delete_cache_packages}" = 'true' ] || \
+     [ "${check_os_version}" = 'true' ] || \
      [ "${dry_run}" = 'true' ]; then
     quit_err_msg_with_help "Mutually exclusive options selected" 1
   fi
@@ -119,7 +128,8 @@ handle_upgrade_system_patches() {
   if [ "${upgrade_packages}" = 'true' ] || \
      [ "${upgrade_system_to_release}" = 'true' ] || \
      [ "${uninstall_orphan_packages}" = 'true' ] || \
-     [ "${delete_cache_packages}" = 'true' ]; then
+     [ "${delete_cache_packages}" = 'true' ] || \
+     [ "${check_os_version}" = 'true' ]; then
     quit_err_msg_with_help "Mutually exclusive options selected" 1
   fi
   upgrade_system_patches='true'
@@ -130,6 +140,7 @@ handle_upgrade_system_to_release() {
      [ "${upgrade_system_patches}" = 'true' ] || \
      [ "${uninstall_orphan_packages}" = 'true' ] || \
      [ "${delete_cache_packages}" = 'true' ] || \
+     [ "${check_os_version}" = 'true' ] || \
      [ "${dry_run}" = 'true' ]; then
     quit_err_msg_with_help "Mutually exclusive options selected" 1
   fi
@@ -141,7 +152,8 @@ handle_uninstall_orphan_packages() {
   if [ "${upgrade_packages}" = 'true' ] || \
      [ "${upgrade_system_patches}" = 'true' ] || \
      [ "${upgrade_system_to_release}" = 'true' ] || \
-     [ "${delete_cache_packages}" = 'true' ]; then
+     [ "${delete_cache_packages}" = 'true' ] || \
+     [ "${check_os_version}" = 'true' ]; then
     quit_err_msg_with_help "Mutually exclusive options selected" 1
   fi
   uninstall_orphan_packages='true'
@@ -151,10 +163,23 @@ handle_delete_cache_packages() {
   if [ "${upgrade_packages}" = 'true' ] || \
      [ "${upgrade_system_patches}" = 'true' ] || \
      [ "${upgrade_system_to_release}" = 'true' ] || \
-     [ "${uninstall_orphan_packages}" = 'true' ]; then
+     [ "${uninstall_orphan_packages}" = 'true' ] || \
+     [ "${check_os_version}" = 'true' ]; then
     quit_err_msg_with_help "Mutually exclusive options selected" 1
   fi
   delete_cache_packages='true'
+}
+
+handle_check_os_version() {
+  if [ "${upgrade_packages}" = 'true' ] || \
+     [ "${upgrade_system_patches}" = 'true' ] || \
+     [ "${upgrade_system_to_release}" = 'true' ] || \
+     [ "${uninstall_orphan_packages}" = 'true' ] || \
+     [ "${delete_cache_packages}" = 'true' ] || \
+     [ "${dry_run}" = 'true' ]; then
+    quit_err_msg_with_help "Mutually exclusive options selected" 1
+  fi
+  check_os_version='true'
 }
 
 handle_dry_run() {
@@ -302,6 +327,12 @@ do_delete_cache_packages() {
   fi
 }
 
+do_check_os_version() {
+  echo "Checking OS version with 'freebsd-version -u'..."
+  freebsd-version -u
+  quit_if_rc_not_0 "${?}" "FreeBSD version-checking error" 10
+}
+
 main() {
   get_cmd_opts "$@"
   check_running_as_root "$@"
@@ -315,6 +346,8 @@ main() {
     do_uninstall_orphan_packages "$@"
   elif [ "${delete_cache_packages}" = 'true' ]; then
     do_delete_cache_packages "$@"
+  elif [ "${check_os_version}" = 'true' ]; then
+    do_check_os_version "$@"
   else
     quit_err_msg_with_help "no valid option selected" 1
   fi
