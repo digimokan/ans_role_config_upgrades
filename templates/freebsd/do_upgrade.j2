@@ -221,7 +221,8 @@ quit_err_msg_with_help() {
 }
 
 check_running_as_root() {
-  if [ "$(id -u)" != "0" ]; then
+  if [ "$(id -un)" != 'root' ] && \
+     [ "${check_os_version}" = 'false' ]; then
     quit_err_msg_with_help "must run this script as root" 1
   fi
 }
