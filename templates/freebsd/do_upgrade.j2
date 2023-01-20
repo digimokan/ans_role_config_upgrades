@@ -11,13 +11,14 @@
 # GLOBAL VARS:
 
 # User Selection Options
+check_os_version='false'
+audit_installed_packages='false'
 upgrade_packages='false'
 force_reinstall_packages='false'
 upgrade_system_patches='false'
 upgrade_system_to_release='false'
 uninstall_orphan_packages='false'
 delete_cache_packages='false'
-check_os_version='false'
 dry_run='false'
 
 # Hard-Coded Selections
@@ -27,6 +28,7 @@ print_usage() {
   echo 'USAGE:'
   echo "  ${prog_name}        -h"
   echo "  ${prog_name}        -v"
+  echo "  sudo  ${prog_name}  -a"
   echo "  sudo  ${prog_name}  -p  [-n]"
   echo "  sudo  ${prog_name}  -p  -f"
   echo "  sudo  ${prog_name}  -t  [-n]"
@@ -36,8 +38,10 @@ print_usage() {
   echo 'OPTIONS:'
   echo '  -h, --help'
   echo '      print this help message'
+  echo '  -a, --audit-installed-packages'
+  echo '      download vulnerabilities data and audit installed packages'
   echo '  -v, --check-os-version'
-  echo '      check FreeBSD major version, minor version, and patch-set'
+  echo '      check installed FreeBSD major version, minor version, and patch-set'
   echo '  -p, --upgrade-packages'
   echo '      upgrade all installed packages'
   echo '  -f, --force-reinstall-packages'
@@ -61,9 +65,10 @@ print_usage() {
 }
 
 get_cmd_opts() {
-  while getopts ':hvpftr:ocn-:' option; do
+  while getopts ':havpftr:ocn-:' option; do
     case "${option}" in
       h)  handle_help ;;
+      a)  handle_audit_installed_packages ;;
       v)  handle_check_os_version ;;
       p)  handle_upgrade_packages ;;
       f)  handle_force_reinstall_packages ;;
@@ -76,6 +81,8 @@ get_cmd_opts() {
           case ${OPTARG} in
             help)                          handle_help ;;
             help=*)                        handle_illegal_option_arg "${OPTARG}" ;;
+            audit-installed-packages)      handle_audit_installed_packages ;;
+            audit-installed-packages=*)    handle_illegal_option_arg "${OPTARG}" ;;
             check-os-version)              handle_check_os_version ;;
             check-os-version=*)            handle_illegal_option_arg "${OPTARG}" ;;
             upgrade-packages)              handle_upgrade_packages ;;
@@ -105,7 +112,8 @@ handle_help() {
 }
 
 handle_check_os_version() {
-  if [ "${upgrade_packages}" = 'true' ] || \
+  if [ "${audit_installed_packages}" = 'true' ] || \
+     [ "${upgrade_packages}" = 'true' ] || \
      [ "${upgrade_system_patches}" = 'true' ] || \
      [ "${upgrade_system_to_release}" = 'true' ] || \
      [ "${uninstall_orphan_packages}" = 'true' ] || \
@@ -116,8 +124,22 @@ handle_check_os_version() {
   check_os_version='true'
 }
 
+handle_audit_installed_packages() {
+  if [ "${check_os_version}" = 'true' ] || \
+     [ "${upgrade_packages}" = 'true' ] || \
+     [ "${upgrade_system_patches}" = 'true' ] || \
+     [ "${upgrade_system_to_release}" = 'true' ] || \
+     [ "${uninstall_orphan_packages}" = 'true' ] || \
+     [ "${delete_cache_packages}" = 'true' ] || \
+     [ "${dry_run}" = 'true' ]; then
+    quit_err_msg_with_help "Mutually exclusive options selected" 1
+  fi
+  audit_installed_packages='true'
+}
+
 handle_upgrade_packages() {
   if [ "${check_os_version}" = 'true' ] || \
+     [ "${audit_installed_packages}" = 'true' ] || \
      [ "${upgrade_system_patches}" = 'true' ] || \
      [ "${upgrade_system_to_release}" = 'true' ] || \
      [ "${uninstall_orphan_packages}" = 'true' ] || \
@@ -129,6 +151,7 @@ handle_upgrade_packages() {
 
 handle_force_reinstall_packages() {
   if [ "${check_os_version}" = 'true' ] || \
+     [ "${audit_installed_packages}" = 'true' ] || \
      [ "${upgrade_system_patches}" = 'true' ] || \
      [ "${upgrade_system_to_release}" = 'true' ] || \
      [ "${uninstall_orphan_packages}" = 'true' ] || \
@@ -141,6 +164,7 @@ handle_force_reinstall_packages() {
 
 handle_upgrade_system_patches() {
   if [ "${check_os_version}" = 'true' ] || \
+     [ "${audit_installed_packages}" = 'true' ] || \
      [ "${upgrade_packages}" = 'true' ] || \
      [ "${upgrade_system_to_release}" = 'true' ] || \
      [ "${uninstall_orphan_packages}" = 'true' ] || \
@@ -152,6 +176,7 @@ handle_upgrade_system_patches() {
 
 handle_upgrade_system_to_release() {
   if [ "${check_os_version}" = 'true' ] || \
+     [ "${audit_installed_packages}" = 'true' ] || \
      [ "${upgrade_packages}" = 'true' ] || \
      [ "${upgrade_system_patches}" = 'true' ] || \
      [ "${uninstall_orphan_packages}" = 'true' ] || \
@@ -165,6 +190,7 @@ handle_upgrade_system_to_release() {
 
 handle_uninstall_orphan_packages() {
   if [ "${check_os_version}" = 'true' ] || \
+     [ "${audit_installed_packages}" = 'true' ] || \
      [ "${upgrade_packages}" = 'true' ] || \
      [ "${upgrade_system_patches}" = 'true' ] || \
      [ "${upgrade_system_to_release}" = 'true' ] || \
@@ -176,6 +202,7 @@ handle_uninstall_orphan_packages() {
 
 handle_delete_cache_packages() {
   if [ "${check_os_version}" = 'true' ] || \
+     [ "${audit_installed_packages}" = 'true' ] || \
      [ "${upgrade_packages}" = 'true' ] || \
      [ "${upgrade_system_patches}" = 'true' ] || \
      [ "${upgrade_system_to_release}" = 'true' ] || \
@@ -243,6 +270,12 @@ do_check_os_version() {
   echo "Checking OS version with 'freebsd-version -u'..."
   freebsd-version -u
   quit_if_rc_not_0 "${?}" "FreeBSD version-checking error" 10
+}
+
+do_audit_installed_packages() {
+  echo "Auditing installed packages with 'pkg audit -F'..."
+  pkg audit -F
+  quit_if_rc_not_0 "${?}" "FreeBSD package-auditing error" 10
 }
 
 do_upgrade_packages() {
@@ -342,6 +375,8 @@ main() {
   check_running_as_root "$@"
   if [ "${check_os_version}" = 'true' ]; then
     do_check_os_version "$@"
+  elif [ "${audit_installed_packages}" = 'true' ]; then
+    do_audit_installed_packages "$@"
   elif [ "${upgrade_packages}" = 'true' ]; then
     do_upgrade_packages "$@"
   elif [ "${upgrade_system_patches}" = 'true' ]; then
