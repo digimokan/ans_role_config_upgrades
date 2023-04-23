@@ -266,6 +266,15 @@ quit_if_rc_not_0() {
   fi
 }
 
+quit_if_rc_not_0_or_1() {
+  cmd_exit_code="${1}"
+  err_msg="${2}"
+  script_exit_code="${3}"
+  if [ "${cmd_exit_code}" != 0 ] && [ "${cmd_exit_code}" != 1 ]; then
+    quit_err_msg "${err_msg}" "${script_exit_code}"
+  fi
+}
+
 do_check_os_version() {
   echo "Checking OS version with 'freebsd-version -u'..."
   freebsd-version -u
@@ -275,7 +284,7 @@ do_check_os_version() {
 do_audit_installed_packages() {
   echo "Auditing installed packages with 'pkg audit -F'..."
   pkg audit -F
-  quit_if_rc_not_0 "${?}" "FreeBSD package-auditing error" 10
+  quit_if_rc_not_0_or_1 "${?}" "FreeBSD package-auditing error" 10
 }
 
 do_upgrade_packages() {
