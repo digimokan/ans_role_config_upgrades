@@ -315,7 +315,7 @@ do_upgrade_packages() {
   echo "Upgrading all packages with 'pkg upgrade ${run_forced:+'-f'}'..."
   pkg upgrade ${run_forced:+'-f'}
   quit_if_rc_not_0 "${?}" "package upgrade operation failure" 10
-  echo "Package upgrades complete. Reboot system, and run 'pkg audit --fetch'."
+  echo "Package upgrades complete. Reboot system, and audit with '${prog_name} -a'."
 }
 
 do_upgrade_system_patches() {
