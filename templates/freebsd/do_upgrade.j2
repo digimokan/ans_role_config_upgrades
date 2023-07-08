@@ -13,6 +13,7 @@
 # User Selection Options
 check_os_version='false'
 audit_installed_packages='false'
+prune_boot_envs='false'
 create_boot_env='false'
 upgrade_packages='false'
 force_reinstall_packages='false'
@@ -24,12 +25,14 @@ dry_run='false'
 
 # Hard-Coded Selections
 prog_name="$(basename "${0}")"
+num_boot_envs_to_keep=3
 
 print_usage() {
   echo 'USAGE:'
   echo "  ${prog_name}        -h"
   echo "  ${prog_name}        -v"
   echo "  sudo  ${prog_name}  -a"
+  echo "  sudo  ${prog_name}  -w"
   echo "  sudo  ${prog_name}  -e"
   echo "  sudo  ${prog_name}  -p  [-n]"
   echo "  sudo  ${prog_name}  -p  -f"
@@ -44,6 +47,8 @@ print_usage() {
   echo '      check installed FreeBSD major version, minor version, and patch-set'
   echo '  -a, --audit-installed-packages'
   echo '      download vulnerabilities data and audit installed packages'
+  echo '  -w, --prune-boot-envs'
+  echo "      prune boot environments, keeping only the last ${num_boot_envs_to_keep}"
   echo '  -e, --create-and-activate-boot-env'
   echo '      create a new boot environment, and activate it permanently'
   echo '  -p, --upgrade-packages'
@@ -69,11 +74,12 @@ print_usage() {
 }
 
 get_cmd_opts() {
-  while getopts ':hvaepftr:ocn-:' option; do
+  while getopts ':hvawepftr:ocn-:' option; do
     case "${option}" in
       h)  handle_help ;;
       v)  handle_check_os_version ;;
       a)  handle_audit_installed_packages ;;
+      w)  handle_prune_boot_envs ;;
       e)  handle_create_and_activate_boot_env ;;
       p)  handle_upgrade_packages ;;
       f)  handle_force_reinstall_packages ;;
@@ -90,6 +96,8 @@ get_cmd_opts() {
             check-os-version=*)             handle_illegal_option_arg "${OPTARG}" ;;
             audit-installed-packages)       handle_create_and_activate_boot_env ;;
             audit-installed-packages=*)     handle_illegal_option_arg "${OPTARG}" ;;
+            prune-boot-envs)                handle_prune_boot_envs ;;
+            prune-boot-envs=*)              handle_illegal_option_arg "${OPTARG}" ;;
             create-and-activate-boot-env)   handle_audit_installed_packages ;;
             create-and-activate-boot-env=*) handle_illegal_option_arg "${OPTARG}" ;;
             upgrade-packages)               handle_upgrade_packages ;;
@@ -120,6 +128,8 @@ handle_help() {
 
 handle_check_os_version() {
   if [ "${audit_installed_packages}" = 'true' ] || \
+     [ "${prune_boot_envs}" = 'true' ] || \
+     [ "${create_boot_env}" = 'true' ] || \
      [ "${upgrade_packages}" = 'true' ] || \
      [ "${upgrade_system_patches}" = 'true' ] || \
      [ "${upgrade_system_to_release}" = 'true' ] || \
@@ -133,6 +143,7 @@ handle_check_os_version() {
 
 handle_audit_installed_packages() {
   if [ "${check_os_version}" = 'true' ] || \
+     [ "${prune_boot_envs}" = 'true' ] || \
      [ "${create_boot_env}" = 'true' ] || \
      [ "${upgrade_packages}" = 'true' ] || \
      [ "${upgrade_system_patches}" = 'true' ] || \
@@ -145,9 +156,25 @@ handle_audit_installed_packages() {
   audit_installed_packages='true'
 }
 
+handle_prune_boot_envs() {
+  if [ "${check_os_version}" = 'true' ] || \
+     [ "${audit_installed_packages}" = 'true' ] || \
+     [ "${create_boot_env}" = 'true' ] || \
+     [ "${upgrade_packages}" = 'true' ] || \
+     [ "${upgrade_system_patches}" = 'true' ] || \
+     [ "${upgrade_system_to_release}" = 'true' ] || \
+     [ "${uninstall_orphan_packages}" = 'true' ] || \
+     [ "${delete_cache_packages}" = 'true' ] || \
+     [ "${dry_run}" = 'true' ]; then
+    quit_err_msg_with_help "Mutually exclusive options selected" 1
+  fi
+  prune_boot_envs='true'
+}
+
 handle_create_and_activate_boot_env() {
   if [ "${check_os_version}" = 'true' ] || \
      [ "${audit_installed_packages}" = 'true' ] || \
+     [ "${prune_boot_envs}" = 'true' ] || \
      [ "${upgrade_packages}" = 'true' ] || \
      [ "${upgrade_system_patches}" = 'true' ] || \
      [ "${upgrade_system_to_release}" = 'true' ] || \
@@ -162,6 +189,7 @@ handle_create_and_activate_boot_env() {
 handle_upgrade_packages() {
   if [ "${check_os_version}" = 'true' ] || \
      [ "${audit_installed_packages}" = 'true' ] || \
+     [ "${prune_boot_envs}" = 'true' ] || \
      [ "${create_boot_env}" = 'true' ] || \
      [ "${upgrade_system_patches}" = 'true' ] || \
      [ "${upgrade_system_to_release}" = 'true' ] || \
@@ -175,6 +203,7 @@ handle_upgrade_packages() {
 handle_force_reinstall_packages() {
   if [ "${check_os_version}" = 'true' ] || \
      [ "${audit_installed_packages}" = 'true' ] || \
+     [ "${prune_boot_envs}" = 'true' ] || \
      [ "${create_boot_env}" = 'true' ] || \
      [ "${upgrade_system_patches}" = 'true' ] || \
      [ "${upgrade_system_to_release}" = 'true' ] || \
@@ -189,6 +218,7 @@ handle_force_reinstall_packages() {
 handle_upgrade_system_patches() {
   if [ "${check_os_version}" = 'true' ] || \
      [ "${audit_installed_packages}" = 'true' ] || \
+     [ "${prune_boot_envs}" = 'true' ] || \
      [ "${create_boot_env}" = 'true' ] || \
      [ "${upgrade_packages}" = 'true' ] || \
      [ "${upgrade_system_to_release}" = 'true' ] || \
@@ -202,6 +232,7 @@ handle_upgrade_system_patches() {
 handle_upgrade_system_to_release() {
   if [ "${check_os_version}" = 'true' ] || \
      [ "${audit_installed_packages}" = 'true' ] || \
+     [ "${prune_boot_envs}" = 'true' ] || \
      [ "${create_boot_env}" = 'true' ] || \
      [ "${upgrade_packages}" = 'true' ] || \
      [ "${upgrade_system_patches}" = 'true' ] || \
@@ -217,6 +248,7 @@ handle_upgrade_system_to_release() {
 handle_uninstall_orphan_packages() {
   if [ "${check_os_version}" = 'true' ] || \
      [ "${audit_installed_packages}" = 'true' ] || \
+     [ "${prune_boot_envs}" = 'true' ] || \
      [ "${create_boot_env}" = 'true' ] || \
      [ "${upgrade_packages}" = 'true' ] || \
      [ "${upgrade_system_patches}" = 'true' ] || \
@@ -230,6 +262,7 @@ handle_uninstall_orphan_packages() {
 handle_delete_cache_packages() {
   if [ "${check_os_version}" = 'true' ] || \
      [ "${audit_installed_packages}" = 'true' ] || \
+     [ "${prune_boot_envs}" = 'true' ] || \
      [ "${create_boot_env}" = 'true' ] || \
      [ "${upgrade_packages}" = 'true' ] || \
      [ "${upgrade_system_patches}" = 'true' ] || \
@@ -243,6 +276,7 @@ handle_delete_cache_packages() {
 handle_dry_run() {
   if [ "${check_os_version}" = 'true' ] || \
      [ "${audit_installed_packages}" = 'true' ] || \
+     [ "${prune_boot_envs}" = 'true' ] || \
      [ "${create_boot_env}" = 'true' ] || \
      [ "${upgrade_system_to_release}" = 'true' ] || \
      [ "${force_reinstall_packages}" = 'true' ]; then
@@ -316,6 +350,20 @@ do_audit_installed_packages() {
   echo "Auditing installed packages with 'pkg audit -F'..."
   pkg audit -F
   quit_if_rc_not_0_or_1 "${?}" "FreeBSD package-auditing error" 10
+}
+
+do_prune_boot_envs() {
+  all_envs="$(bectl list -H -c creation | cut -f 1)"
+  last_three_envs="$(printf "%s" "${all_envs}" | tail -n "${num_boot_envs_to_keep}")"
+  envs_to_prune="$(printf "%s" "${all_envs}" | grep -Fvx "${last_three_envs}")"
+
+  while IFS= read -r boot_env && [ -n "${boot_env}" ]; do
+    echo "Deleting boot environment with 'bectl destroy \"${boot_env}\"'..."
+    bectl destroy "${boot_env}"
+    quit_if_rc_not_0_or_1 "${?}" "FreeBSD boot environment deletion error" 10
+  done <<EOF
+${envs_to_prune}
+EOF
 }
 
 do_create_and_activate_boot_env() {
@@ -428,6 +476,8 @@ main() {
     do_check_os_version "$@"
   elif [ "${audit_installed_packages}" = 'true' ]; then
     do_audit_installed_packages "$@"
+  elif [ "${prune_boot_envs}" = 'true' ]; then
+    do_prune_boot_envs "$@"
   elif [ "${create_boot_env}" = 'true' ]; then
     do_create_and_activate_boot_env "$@"
   elif [ "${upgrade_packages}" = 'true' ]; then
