@@ -1,6 +1,9 @@
 # file path to system wide pkg utility config file
 pkg_conf_file_path: "/usr/local/etc/pkg.conf"
 
+# file path to system wide system-upgrade config file
+freebsd_update_conf_file_path: "/etc/freebsd-update.conf"
+
 # pkg cmd alias for remote repo package search
 pkg_alias_remote_repo_search: 'ss'
 
