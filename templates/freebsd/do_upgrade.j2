@@ -13,6 +13,7 @@
 # User Selection Options
 check_os_version='false'
 audit_installed_packages='false'
+create_boot_env='false'
 upgrade_packages='false'
 force_reinstall_packages='false'
 upgrade_system_patches='false'
@@ -29,6 +30,7 @@ print_usage() {
   echo "  ${prog_name}        -h"
   echo "  ${prog_name}        -v"
   echo "  sudo  ${prog_name}  -a"
+  echo "  sudo  ${prog_name}  -e"
   echo "  sudo  ${prog_name}  -p  [-n]"
   echo "  sudo  ${prog_name}  -p  -f"
   echo "  sudo  ${prog_name}  -t  [-n]"
@@ -38,10 +40,12 @@ print_usage() {
   echo 'OPTIONS:'
   echo '  -h, --help'
   echo '      print this help message'
-  echo '  -a, --audit-installed-packages'
-  echo '      download vulnerabilities data and audit installed packages'
   echo '  -v, --check-os-version'
   echo '      check installed FreeBSD major version, minor version, and patch-set'
+  echo '  -a, --audit-installed-packages'
+  echo '      download vulnerabilities data and audit installed packages'
+  echo '  -e, --create-and-activate-boot-env'
+  echo '      create a new boot environment, and activate it permanently'
   echo '  -p, --upgrade-packages'
   echo '      upgrade all installed packages'
   echo '  -f, --force-reinstall-packages'
@@ -65,11 +69,12 @@ print_usage() {
 }
 
 get_cmd_opts() {
-  while getopts ':havpftr:ocn-:' option; do
+  while getopts ':hvaepftr:ocn-:' option; do
     case "${option}" in
       h)  handle_help ;;
-      a)  handle_audit_installed_packages ;;
       v)  handle_check_os_version ;;
+      a)  handle_audit_installed_packages ;;
+      e)  handle_create_and_activate_boot_env ;;
       p)  handle_upgrade_packages ;;
       f)  handle_force_reinstall_packages ;;
       t)  handle_upgrade_system_patches ;;
@@ -79,28 +84,30 @@ get_cmd_opts() {
       n)  handle_dry_run ;;
       -)  LONG_OPTARG="${OPTARG#*=}"
           case ${OPTARG} in
-            help)                          handle_help ;;
-            help=*)                        handle_illegal_option_arg "${OPTARG}" ;;
-            audit-installed-packages)      handle_audit_installed_packages ;;
-            audit-installed-packages=*)    handle_illegal_option_arg "${OPTARG}" ;;
-            check-os-version)              handle_check_os_version ;;
-            check-os-version=*)            handle_illegal_option_arg "${OPTARG}" ;;
-            upgrade-packages)              handle_upgrade_packages ;;
-            upgrade-packages=*)            handle_illegal_option_arg "${OPTARG}" ;;
-            force-reinstall-packages)      handle_force_reinstall_packages ;;
-            force-reinstall-packages=*)    handle_illegal_option_arg "${OPTARG}" ;;
-            upgrade-system-patches)        handle_upgrade_system_patches ;;
-            upgrade-system-patches=*)      handle_illegal_option_arg "${OPTARG}" ;;
-            upgrade-system-to-release=?*)  handle_upgrade_system_to_release "${LONG_OPTARG}" ;;
-            upgrade-system-to-release*)    handle_missing_option_arg "${OPTARG}" ;;
-            uninstall-orphan-packages)     handle_uninstall_orphan_packages ;;
-            uninstall-orphan-packages=*)   handle_illegal_option_arg "${OPTARG}" ;;
-            delete-cache-packages)         handle_delete_cache_packages ;;
-            delete-cache-packages=*)       handle_illegal_option_arg "${OPTARG}" ;;
-            dry-run)                       handle_dry_run ;;
-            dry-run=*)                     handle_illegal_option_arg "${OPTARG}" ;;
-            '')                            break ;; # non-option arg starting with '-'
-            *)                             handle_unknown_option "${OPTARG}" ;;
+            help)                           handle_help ;;
+            help=*)                         handle_illegal_option_arg "${OPTARG}" ;;
+            check-os-version)               handle_check_os_version ;;
+            check-os-version=*)             handle_illegal_option_arg "${OPTARG}" ;;
+            audit-installed-packages)       handle_create_and_activate_boot_env ;;
+            audit-installed-packages=*)     handle_illegal_option_arg "${OPTARG}" ;;
+            create-and-activate-boot-env)   handle_audit_installed_packages ;;
+            create-and-activate-boot-env=*) handle_illegal_option_arg "${OPTARG}" ;;
+            upgrade-packages)               handle_upgrade_packages ;;
+            upgrade-packages=*)             handle_illegal_option_arg "${OPTARG}" ;;
+            force-reinstall-packages)       handle_force_reinstall_packages ;;
+            force-reinstall-packages=*)     handle_illegal_option_arg "${OPTARG}" ;;
+            upgrade-system-patches)         handle_upgrade_system_patches ;;
+            upgrade-system-patches=*)       handle_illegal_option_arg "${OPTARG}" ;;
+            upgrade-system-to-release=?*)   handle_upgrade_system_to_release "${LONG_OPTARG}" ;;
+            upgrade-system-to-release*)     handle_missing_option_arg "${OPTARG}" ;;
+            uninstall-orphan-packages)      handle_uninstall_orphan_packages ;;
+            uninstall-orphan-packages=*)    handle_illegal_option_arg "${OPTARG}" ;;
+            delete-cache-packages)          handle_delete_cache_packages ;;
+            delete-cache-packages=*)        handle_illegal_option_arg "${OPTARG}" ;;
+            dry-run)                        handle_dry_run ;;
+            dry-run=*)                      handle_illegal_option_arg "${OPTARG}" ;;
+            '')                             break ;; # non-option arg starting with '-'
+            *)                              handle_unknown_option "${OPTARG}" ;;
           esac ;;
       \?) handle_unknown_option "${OPTARG}" ;;
     esac
@@ -126,6 +133,7 @@ handle_check_os_version() {
 
 handle_audit_installed_packages() {
   if [ "${check_os_version}" = 'true' ] || \
+     [ "${create_boot_env}" = 'true' ] || \
      [ "${upgrade_packages}" = 'true' ] || \
      [ "${upgrade_system_patches}" = 'true' ] || \
      [ "${upgrade_system_to_release}" = 'true' ] || \
@@ -137,9 +145,24 @@ handle_audit_installed_packages() {
   audit_installed_packages='true'
 }
 
+handle_create_and_activate_boot_env() {
+  if [ "${check_os_version}" = 'true' ] || \
+     [ "${audit_installed_packages}" = 'true' ] || \
+     [ "${upgrade_packages}" = 'true' ] || \
+     [ "${upgrade_system_patches}" = 'true' ] || \
+     [ "${upgrade_system_to_release}" = 'true' ] || \
+     [ "${uninstall_orphan_packages}" = 'true' ] || \
+     [ "${delete_cache_packages}" = 'true' ] || \
+     [ "${dry_run}" = 'true' ]; then
+    quit_err_msg_with_help "Mutually exclusive options selected" 1
+  fi
+  create_boot_env='true'
+}
+
 handle_upgrade_packages() {
   if [ "${check_os_version}" = 'true' ] || \
      [ "${audit_installed_packages}" = 'true' ] || \
+     [ "${create_boot_env}" = 'true' ] || \
      [ "${upgrade_system_patches}" = 'true' ] || \
      [ "${upgrade_system_to_release}" = 'true' ] || \
      [ "${uninstall_orphan_packages}" = 'true' ] || \
@@ -152,6 +175,7 @@ handle_upgrade_packages() {
 handle_force_reinstall_packages() {
   if [ "${check_os_version}" = 'true' ] || \
      [ "${audit_installed_packages}" = 'true' ] || \
+     [ "${create_boot_env}" = 'true' ] || \
      [ "${upgrade_system_patches}" = 'true' ] || \
      [ "${upgrade_system_to_release}" = 'true' ] || \
      [ "${uninstall_orphan_packages}" = 'true' ] || \
@@ -165,6 +189,7 @@ handle_force_reinstall_packages() {
 handle_upgrade_system_patches() {
   if [ "${check_os_version}" = 'true' ] || \
      [ "${audit_installed_packages}" = 'true' ] || \
+     [ "${create_boot_env}" = 'true' ] || \
      [ "${upgrade_packages}" = 'true' ] || \
      [ "${upgrade_system_to_release}" = 'true' ] || \
      [ "${uninstall_orphan_packages}" = 'true' ] || \
@@ -177,6 +202,7 @@ handle_upgrade_system_patches() {
 handle_upgrade_system_to_release() {
   if [ "${check_os_version}" = 'true' ] || \
      [ "${audit_installed_packages}" = 'true' ] || \
+     [ "${create_boot_env}" = 'true' ] || \
      [ "${upgrade_packages}" = 'true' ] || \
      [ "${upgrade_system_patches}" = 'true' ] || \
      [ "${uninstall_orphan_packages}" = 'true' ] || \
@@ -191,6 +217,7 @@ handle_upgrade_system_to_release() {
 handle_uninstall_orphan_packages() {
   if [ "${check_os_version}" = 'true' ] || \
      [ "${audit_installed_packages}" = 'true' ] || \
+     [ "${create_boot_env}" = 'true' ] || \
      [ "${upgrade_packages}" = 'true' ] || \
      [ "${upgrade_system_patches}" = 'true' ] || \
      [ "${upgrade_system_to_release}" = 'true' ] || \
@@ -203,6 +230,7 @@ handle_uninstall_orphan_packages() {
 handle_delete_cache_packages() {
   if [ "${check_os_version}" = 'true' ] || \
      [ "${audit_installed_packages}" = 'true' ] || \
+     [ "${create_boot_env}" = 'true' ] || \
      [ "${upgrade_packages}" = 'true' ] || \
      [ "${upgrade_system_patches}" = 'true' ] || \
      [ "${upgrade_system_to_release}" = 'true' ] || \
@@ -213,7 +241,10 @@ handle_delete_cache_packages() {
 }
 
 handle_dry_run() {
-  if [ "${upgrade_system_to_release}" = 'true' ] || \
+  if [ "${check_os_version}" = 'true' ] || \
+     [ "${audit_installed_packages}" = 'true' ] || \
+     [ "${create_boot_env}" = 'true' ] || \
+     [ "${upgrade_system_to_release}" = 'true' ] || \
      [ "${force_reinstall_packages}" = 'true' ]; then
     quit_err_msg_with_help "Mutually exclusive options selected" 1
   fi
@@ -285,6 +316,17 @@ do_audit_installed_packages() {
   echo "Auditing installed packages with 'pkg audit -F'..."
   pkg audit -F
   quit_if_rc_not_0_or_1 "${?}" "FreeBSD package-auditing error" 10
+}
+
+do_create_and_activate_boot_env() {
+  new_boot_env_name="updates_$(date +%Y_%m_%d_%H%M_%S)"
+  echo "Creating new boot environment with 'bectl create \"${new_boot_env_name}\"'..."
+  bectl create "${new_boot_env_name}"
+  quit_if_rc_not_0_or_1 "${?}" "FreeBSD boot environment creation error" 10
+  echo "Activating new boot environment with 'bectl activate \"${new_boot_env_name}\"'..."
+  bectl activate "${new_boot_env_name}"
+  quit_if_rc_not_0_or_1 "${?}" "FreeBSD boot environment activation error" 10
+  echo "\"${new_boot_env_name}\" created and activated. Reboot to boot into \"${new_boot_env_name}\"."
 }
 
 do_upgrade_packages() {
@@ -386,6 +428,8 @@ main() {
     do_check_os_version "$@"
   elif [ "${audit_installed_packages}" = 'true' ]; then
     do_audit_installed_packages "$@"
+  elif [ "${create_boot_env}" = 'true' ]; then
+    do_create_and_activate_boot_env "$@"
   elif [ "${upgrade_packages}" = 'true' ]; then
     do_upgrade_packages "$@"
   elif [ "${upgrade_system_patches}" = 'true' ]; then
