@@ -357,13 +357,19 @@ do_prune_boot_envs() {
   last_three_envs="$(printf "%s" "${all_envs}" | tail -n "${num_boot_envs_to_keep}")"
   envs_to_prune="$(printf "%s" "${all_envs}" | grep -Fvx "${last_three_envs}")"
 
+  nothing_to_prune='true'
   while IFS= read -r boot_env && [ -n "${boot_env}" ]; do
+    nothing_to_prune='false'
     echo "Deleting boot environment with 'bectl destroy \"${boot_env}\"'..."
     bectl destroy "${boot_env}"
     quit_if_rc_not_0_or_1 "${?}" "FreeBSD boot environment deletion error" 10
   done <<EOF
 ${envs_to_prune}
 EOF
+
+  if [ "${nothing_to_prune}" = 'true' ]; then
+    echo "Currently, no more than ${num_boot_envs_to_keep} boot envs exist. Nothing to prune"
+  fi
 }
 
 do_create_and_activate_boot_env() {
