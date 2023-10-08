@@ -2,7 +2,7 @@
   ansible.builtin.copy:
     src: "{{ mirrors_file }}"
     dest: "{{ mirrors_bkup }}"
-    force: yes
+    force: true
   become: true
   become_user: root
 

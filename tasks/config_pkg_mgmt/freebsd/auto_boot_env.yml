@@ -4,7 +4,7 @@
     block: "CreateBootEnv no"
     marker: "# {mark} ANSIBLE MANAGED BLOCK: auto boot env creation"
     state: present
-    create: no
+    create: false
   become: true
   become_user: root
 

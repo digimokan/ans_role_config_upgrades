@@ -3,7 +3,7 @@
     paths: "{{ pkg_repo_list_file_path | dirname }}"
     patterns: >-
       ^{{ pkg_repo_list_file_path | basename }}$
-    use_regex: yes
+    use_regex: true
     age: "{{ pkg_repo_list_age_cutoff }}"
   register: mirrors_found
   changed_when: mirrors_found.matched > 0

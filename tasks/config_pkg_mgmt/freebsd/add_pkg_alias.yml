@@ -6,7 +6,7 @@
     block: '  {{ alias_name }}{{ alias_command }},'
     marker: "# {mark} ANSIBLE MANAGED BLOCK: pkg alias for {{ alias_descrip }}"
     state: present
-    create: no
+    create: false
   become: true
   become_user: root
 
