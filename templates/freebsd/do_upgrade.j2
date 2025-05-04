@@ -94,11 +94,11 @@ get_cmd_opts() {
             help=*)                         handle_illegal_option_arg "${OPTARG}" ;;
             check-os-version)               handle_check_os_version ;;
             check-os-version=*)             handle_illegal_option_arg "${OPTARG}" ;;
-            audit-installed-packages)       handle_create_and_activate_boot_env ;;
+            audit-installed-packages)       handle_audit_installed_packages ;;
             audit-installed-packages=*)     handle_illegal_option_arg "${OPTARG}" ;;
             prune-boot-envs)                handle_prune_boot_envs ;;
             prune-boot-envs=*)              handle_illegal_option_arg "${OPTARG}" ;;
-            create-and-activate-boot-env)   handle_audit_installed_packages ;;
+            create-and-activate-boot-env)   handle_create_and_activate_boot_env ;;
             create-and-activate-boot-env=*) handle_illegal_option_arg "${OPTARG}" ;;
             upgrade-packages)               handle_upgrade_packages ;;
             upgrade-packages=*)             handle_illegal_option_arg "${OPTARG}" ;;
