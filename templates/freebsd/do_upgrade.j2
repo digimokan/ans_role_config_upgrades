@@ -520,7 +520,7 @@ main() {
   check_running_as_root "$@"
   if [ "${check_os_version}" = 'true' ]; then
     do_check_os_version "$@"
-  if [ "${list_package_history}" = 'true' ]; then
+  elif [ "${list_package_history}" = 'true' ]; then
     do_list_package_history "$@"
   elif [ "${audit_installed_packages}" = 'true' ]; then
     do_audit_installed_packages "$@"
