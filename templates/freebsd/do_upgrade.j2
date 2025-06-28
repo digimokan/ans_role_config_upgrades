@@ -351,7 +351,8 @@ quit_err_msg_with_help() {
 
 check_running_as_root() {
   if [ "$(id -un)" != 'root' ] && \
-     [ "${check_os_version}" = 'false' ]; then
+     [ "${check_os_version}" = 'false' ] && \
+     [ "${list_package_history}" = 'false' ]; then
     quit_err_msg_with_help "must run this script as root" 1
   fi
 }
@@ -517,27 +518,27 @@ do_delete_cache_packages() {
 
 main() {
   get_cmd_opts "$@"
-  check_running_as_root "$@"
+  check_running_as_root
   if [ "${check_os_version}" = 'true' ]; then
-    do_check_os_version "$@"
+    do_check_os_version
   elif [ "${list_package_history}" = 'true' ]; then
-    do_list_package_history "$@"
+    do_list_package_history
   elif [ "${audit_installed_packages}" = 'true' ]; then
-    do_audit_installed_packages "$@"
+    do_audit_installed_packages
   elif [ "${prune_boot_envs}" = 'true' ]; then
-    do_prune_boot_envs "$@"
+    do_prune_boot_envs
   elif [ "${create_boot_env}" = 'true' ]; then
-    do_create_and_activate_boot_env "$@"
+    do_create_and_activate_boot_env
   elif [ "${upgrade_packages}" = 'true' ]; then
-    do_upgrade_packages "$@"
+    do_upgrade_packages
   elif [ "${upgrade_system_patches}" = 'true' ]; then
-    do_upgrade_system_patches "$@"
+    do_upgrade_system_patches
   elif [ "${upgrade_system_to_release}" = 'true' ]; then
-    do_upgrade_system_to_release "$@"
+    do_upgrade_system_to_release
   elif [ "${uninstall_orphan_packages}" = 'true' ]; then
-    do_uninstall_orphan_packages "$@"
+    do_uninstall_orphan_packages
   elif [ "${delete_cache_packages}" = 'true' ]; then
-    do_delete_cache_packages "$@"
+    do_delete_cache_packages
   else
     quit_err_msg_with_help "no valid option selected" 1
   fi
