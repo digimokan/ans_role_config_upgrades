@@ -55,9 +55,9 @@ Ansible role to configure system and package upgrades.
 
 ## Role Options
 
-See the role `defaults` file for main role vars listing:
+Vars with default values, which can be overridden in the playbook:
 
-  * [defaults](../defaults/main/)
+  * [overridable](../defaults/main/overridable/)
 
 ## Contributing
 
