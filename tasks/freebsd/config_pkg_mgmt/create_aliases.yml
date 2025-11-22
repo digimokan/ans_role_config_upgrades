@@ -1,35 +1,35 @@
 - name: "Create pkg cmd alias for {{ alias_descrip }}"
   ansible.builtin.include_tasks: add_pkg_alias.yml
   vars:
-    alias_name: "{{ pkg_alias_remote_repo_search }}"
+    alias_name: "{{ cfg_upgrades_freebsd_pkg_alias_remote_repo_search }}"
     alias_command: ' = search'
     alias_descrip: 'remote-repo pkg search'
 
 - name: "Create pkg cmd alias for {{ alias_descrip }}"
   ansible.builtin.include_tasks: add_pkg_alias.yml
   vars:
-    alias_name: "{{ pkg_alias_remote_repo_details }}"
+    alias_name: "{{ cfg_upgrades_freebsd_pkg_alias_remote_repo_details }}"
     alias_command: ' = search -Q name -Q comment -Q version -Q www -Q licenses -Q maintainer -Q depends-on -Q required-by'
     alias_descrip: 'remote-repo pkg details'
 
 - name: "Create pkg cmd alias for {{ alias_descrip }}"
   ansible.builtin.include_tasks: add_pkg_alias.yml
   vars:
-    alias_name: "{{ pkg_alias_local_db_search }}"
+    alias_name: "{{ cfg_upgrades_freebsd_pkg_alias_local_db_search }}"
     alias_command: ': query --regex %n'
     alias_descrip: 'local-db pkg search'
 
 - name: "Create pkg cmd alias for {{ alias_descrip }}"
   ansible.builtin.include_tasks: add_pkg_alias.yml
   vars:
-    alias_name: "{{ pkg_alias_local_db_details }}"
+    alias_name: "{{ cfg_upgrades_pkg_alias_local_db_details }}"
     alias_command: ' = info --full --dependencies --required-by'
     alias_descrip: 'local-db pkg details'
 
 - name: "Create pkg cmd alias for {{ alias_descrip }}"
   ansible.builtin.include_tasks: add_pkg_alias.yml
   vars:
-    alias_name: "{{ pkg_alias_local_db_message }}"
+    alias_name: "{{ cfg_ugprades_freebsd_pkg_alias_local_db_message }}"
     alias_command: ' = info --pkg-message'
     alias_descrip: 'local-db pkg message'
 

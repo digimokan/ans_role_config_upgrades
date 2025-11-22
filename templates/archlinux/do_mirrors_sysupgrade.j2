@@ -168,7 +168,7 @@ do_backup_mirrorlist() {
 do_mirrors_update() {
   echo 'Updating mirror list with reflector...'
   # shellcheck disable=SC1083
-  reflector {{ repo_update_params }} --save "${mirrors_path}"
+  reflector {{ cfg_upgrades_archlinux_repo_update_params }} --save "${mirrors_path}"
   exit_code="${?}"
   if [ "${exit_code}" != 0 ]; then
     quit_err_msg "mirrors update failure" 5

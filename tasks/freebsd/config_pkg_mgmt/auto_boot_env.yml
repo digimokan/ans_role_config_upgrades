@@ -1,6 +1,6 @@
-- name: "Set 'CreateBootEnv' to 'no' in {{ freebsd_update_conf_file_path }}"
+- name: "Set 'CreateBootEnv' to 'no' in {{ cfg_upgrades_freebsd_update_conf_file_path }}"
   ansible.builtin.blockinfile:
-    path: "{{ freebsd_update_conf_file_path }}"
+    path: "{{ cfg_upgrades_freebsd_update_conf_file_path }}"
     block: "CreateBootEnv no"
     marker: "# {mark} ANSIBLE MANAGED BLOCK: auto boot env creation"
     state: present

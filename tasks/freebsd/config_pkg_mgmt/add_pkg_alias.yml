@@ -1,6 +1,6 @@
-- name: "Create alias 'pkg {{ alias_name }}' in {{ pkg_conf_file_path }}"
+- name: "Create alias 'pkg {{ alias_name }}' in {{ cfg_upgrades_freebsd_pkg_conf_file_path }}"
   ansible.builtin.blockinfile:
-    path: "{{ pkg_conf_file_path }}"
+    path: "{{ cfg_upgrades_freebsd_pkg_conf_file_path }}"
     insertafter: >-
       ^ALIAS(.*)\{$
     block: '  {{ alias_name }}{{ alias_command }},'

@@ -53,32 +53,6 @@ Ansible role to configure system and package upgrades.
        name: ans_role_config_upgrades
    ```
 
-4. Use role "utility task" (from the `inc` directory) to update OS package
-   repositories:
-
-   ```yaml
-   - name: "Update OS package repositories"
-     ansible.builtin.include_role:
-       name: ans_role_config_upgrades
-       tasks_from: inc/update_pkg_repo_list.yml
-     vars:
-       pkg_repo_list_age_cutoff: "1d"
-   ```
-
-### Use From Parent Role As Dependency
-
-1. List in parent role's `meta/main.yml`, with `never` tag to avoid duplication:
-
-   ```yaml
-   dependencies:
-     - src: https://github.com/digimokan/ans_role_config_upgrades
-       tags:
-         - never
-   ```
-
-2. Call role with step 3 or 4 from [Use From Playbook](#use-from-playbook)
-   section.
-
 ## Role Options
 
 See the role `defaults` file for main role vars listing:
