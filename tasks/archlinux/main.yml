@@ -1,0 +1,6 @@
+- name: "Install required packages"
+  ansible.builtin.include_tasks: install/main.yml
+
+- name: "Create utility scripts"
+  ansible.builtin.include_tasks: create_util_scripts/main.yml
+

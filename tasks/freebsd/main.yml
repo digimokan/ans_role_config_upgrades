@@ -1,0 +1,6 @@
+- name: "Configure package management"
+  ansible.builtin.include_tasks: config_pkg_mgmt/main.yml
+
+- name: "Create utility scripts"
+  ansible.builtin.include_tasks: create_util_scripts/main.yml
+

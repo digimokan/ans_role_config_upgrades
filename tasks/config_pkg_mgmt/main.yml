@@ -1,5 +1,0 @@
-- name: "Configure package managment for FreeBSD"
-  ansible.builtin.include_tasks: freebsd/main.yml
-  when: ansible_os_family == "FreeBSD"
-
-

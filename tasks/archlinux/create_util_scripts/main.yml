@@ -2,8 +2,6 @@
   ansible.builtin.template:
     dest: "/usr/local/bin/{{ script_name }}.sh"
     src: "archlinux/{{ script_name }}.j2"
-    owner: 'root'
-    group: 'root'
     mode: '755'
     force: true
   become: true
