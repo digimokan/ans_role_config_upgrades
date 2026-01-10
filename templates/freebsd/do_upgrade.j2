@@ -447,11 +447,20 @@ do_upgrade_packages() {
   fi
 
   # upgrade all packages
-  run_forced=''
-  [ "${force_reinstall_packages}" = 'true' ] && run_forced='yes'
-  echo "Upgrading all packages with 'pkg upgrade ${run_forced:+'-f'}'..."
-  pkg upgrade ${run_forced:+'-f'}
-  quit_if_rc_not_0 "${?}" "package upgrade operation failure" 10
+  if [ "${force_reinstall_packages}" = 'true' ]; then
+    echo "Upgrading pkg itself, and setting up default repo config with 'pkg bootstrap -f'..."
+    pkg bootstrap -f
+    quit_if_rc_not_0 "${?}" "package bootstrap operation failure" 10
+    # Ref: https://docs.freebsd.org/en/books/handbook/cutting-edge/#freebsdupdate-portsrebuild
+    echo "Upgrading all packages with 'pkg-static upgrade -f'..."
+    pkg-static upgrade -f
+    quit_if_rc_not_0 "${?}" "package upgrade-force operation failure" 10
+  else
+    echo "Upgrading all packages with 'pkg upgrade'..."
+    pkg upgrade
+    quit_if_rc_not_0 "${?}" "package upgrade operation failure" 10
+  fi
+
   echo "Package upgrades complete. Reboot system, and audit with '${prog_name} -a'."
 }
 
@@ -473,7 +482,7 @@ do_upgrade_system_patches() {
     exit 0
   fi
 
-  # install the fetched base-system patches into the new BE
+  # install the fetched base-system patches
   echo "Installing base system patches with 'freebsd-update install'..."
   freebsd-update install
   quit_if_rc_not_0 "${?}" "base-system-patch install failure" 10
@@ -482,16 +491,31 @@ do_upgrade_system_patches() {
 }
 
 do_upgrade_system_to_release() {
-  # fetch and merge-compare the new release into the new BE
+  # check that existing base system has latest patches, prior to starting upgrade
+  freebsd-update fetch
+  quit_if_rc_not_0 "${?}" "pre-upgrade base-system-patch fetch failure" 10
+  freebsd-update updatesready
+  exit_code="${?}"
+  if [ "${exit_code}" != 2 ]; then
+    quit_err_msg "Existing base-system does not have latest patches. Run this script with -t." 10
+  fi
+
+  # fetch and merge-compare the new release
   echo "Fetching and merge-comparing new release with 'freebsd-update -r ${release_vers}-RELEASE upgrade'..."
   freebsd-update -r "${release_vers}-RELEASE" upgrade
   quit_if_rc_not_0 "${?}" "release fetch or merge-compare failure" 10
 
-  # install the new release into the new BE
+  # install the new release
   echo "Installing new release with 'freebsd-update install'..."
   freebsd-update install
   quit_if_rc_not_0 "${?}" "release install failure" 10
-  echo "First-stage install complete. Reboot system. Run 'freebsd-update install' again. Then run this script with '-p -f' options."
+  echo "First-stage install complete:"
+  echo "  1. Reboot system."
+  echo "  2. Run 'freebsd-update install' again."
+  echo "  3. Run this script with '-p -f' options."
+  echo "  4. Rebuild ports, as required."
+  echo "  5. Run 'freebsd-update install' again."
+  echo "  6. Reboot system again."
 }
 
 do_uninstall_orphan_packages() {
