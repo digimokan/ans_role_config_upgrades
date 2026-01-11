@@ -455,6 +455,10 @@ do_upgrade_packages() {
     echo "Upgrading all packages with 'pkg-static upgrade -f'..."
     pkg-static upgrade -f
     quit_if_rc_not_0 "${?}" "package upgrade-force operation failure" 10
+    # Note: possible bug, this was req for drm-kmod following upgrade to 15.0
+    echo "Upgrading kernel module packages with 'pkg upgrade -r FreeBSD-ports-kmods'..."
+    pkg upgrade -r FreeBSD-ports-kmods
+    quit_if_rc_not_0 "${?}" "package kernel module upgrades operation failure" 10
   else
     echo "Upgrading all packages with 'pkg upgrade'..."
     pkg upgrade
