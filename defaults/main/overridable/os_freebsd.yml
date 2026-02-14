@@ -4,6 +4,9 @@ cfg_upgrades_freebsd_pkg_conf_file_path: "/usr/local/etc/pkg.conf"
 # file path to system wide system-upgrade config file
 cfg_upgrades_freebsd_update_conf_file_path: "/etc/freebsd-update.conf"
 
+# let the FreeBSD automatically create boot envs when running upgrade cmds
+cfg_upgrades_freebsd_create_bootenv_on_upgrade: false
+
 # pkg cmd alias for remote repo package search
 cfg_upgrades_freebsd_pkg_alias_remote_repo_search: 'ss'
 
