@@ -1,10 +1,12 @@
-- name: "Set 'CreateBootEnv' to 'no' in {{ cfg_upgrades_freebsd_update_conf_file_path }}"
+- name: "Set 'CreateBootEnv' to '{{ create_boot_env }}' in '{{ cfg_upgrades_freebsd_update_conf_file_path }}'"
   ansible.builtin.blockinfile:
     path: "{{ cfg_upgrades_freebsd_update_conf_file_path }}"
-    block: "CreateBootEnv no"
+    block: "CreateBootEnv {{ create_boot_env }}"
     marker: "# {mark} ANSIBLE MANAGED BLOCK: auto boot env creation"
     state: present
     create: false
+  vars:
+    create_boot_env: "{{ 'yes' if cfg_upgrades_freebsd_create_bootenv_on_upgrade else 'no' }}"
   become: true
   become_user: root
 
